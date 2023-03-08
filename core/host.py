@@ -75,3 +75,7 @@ def get_usb_devices():
                 dinfo = info.groupdict()
                 dinfo['device'] = '/dev/bus/usb/%s/%s' % (dinfo.pop('bus'), dinfo.pop('device'))
                 devices.append(dinfo)
+    return devices
+
+
+print(str(get_usb_devices()))
