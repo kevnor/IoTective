@@ -16,7 +16,6 @@ def main():
 
     with open(path, "w") as file:
         json.dump(discovered_hosts, file)
-
     # with open(path, 'r') as file:
     #     data = json.load(file)
     #     hosts = data["hosts"]

@@ -18,12 +18,15 @@ def nmap_enumeration():
     output = {}
     default_gateway = get_default_gateway()
 
+    #print("performing test scan...")
+    #print(nm.scan("192.168.0.85", arguments="-sn -v"))
+
     # Extract useful information from the scan
     for host in scan_results['scan']:
         if host == '127.0.0.1' or host == default_gateway or "mac" not in scan_results['scan'][host]['addresses']:
             continue
         output[host] = {'addresses': scan_results['scan'][host]['addresses'], 'vendor': {}, 'ports': {}, 'os': {}}
-
+        print(str(scan_results["scan"][host]))
         if 'vendor' in scan_results['scan'][host] and scan_results['scan'][host]['vendor']:
             output[host]['vendor'] = scan_results['scan'][host]['vendor'][output[host]['addresses']['mac']]
         if 'tcp' in scan_results['scan'][host] and scan_results['scan'][host]['tcp']:
