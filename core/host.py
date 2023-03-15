@@ -68,10 +68,14 @@ def get_usb_devices():
     device_re = re.compile(b"Bus\s+(?P<bus>\d+)\s+Device\s+(?P<device>\d+).+ID\s(?P<id>\w+:\w+)\s(?P<tag>.+)$", re.I)
     df = subprocess.check_output("lsusb")
     devices = []
-    for i in df.split(b'\n'):
-        if i:
-            info = device_re.match(i)
+    for line in df.split(b'\n'):
+        if line:
+            info = device_re.match(line)
             if info:
                 dinfo = info.groupdict()
-                dinfo['device'] = '/dev/bus/usb/%s/%s' % (dinfo.pop('bus'), dinfo.pop('device'))
+                dinfo['bus'] = dinfo['bus'].decode("utf-8")
+                dinfo['id'] = dinfo['id'].decode("utf-8")
+                dinfo['tag'] = dinfo['tag'].decode("utf-8")
+                dinfo['device'] = '/dev/bus/usb/%s/%s' % (dinfo.pop('bus'), dinfo.pop('device').decode("utf-8"))
                 devices.append(dinfo)
+    return devices

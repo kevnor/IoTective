@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile-app
+    depends_on:
+    - db
+    network_mode: "host"
+    privileged: true
+
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile-mongo
+    ports:
+    - "27017:27017"
+version: '3.9'

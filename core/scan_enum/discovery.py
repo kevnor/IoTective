@@ -1,29 +1,30 @@
-from scapy.layers.l2 import srp, Ether, ARP
 import serial
-import json
+from datetime import datetime
+import subprocess
+import time
+from nmap import PortScanner
 
 ser = serial.Serial
 
 
-def discover_ips(ip_range):
-    # Perform ARP scan on IP range
-    ans, unans = srp(Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=ip_range), timeout=2, verbose=0)
-
-    discovered_hosts = []
-    for element in ans:
-        print(element)
-        discovered_hosts.append({"ipv4": element[1].psrc, "mac": element[1].hwsrc})
-
-    # Write IPv4 and MAC to JSON file
-    with open("../../scans/scan.json", 'r') as file:
-        data = json.load(file)
-
-    data['hosts'] = discovered_hosts
-
-    with open("../../scans/scan.json", 'w') as file:
-        json.dump(data, file)
-
-    return discovered_hosts
+def upnp_discovery(ip_range):
+    nm = PortScanner()
+    print("Performing UPnP discovery...")
+    arguments = "-sU -p 1900 --script=upnp-info " + ip_range
+    #arguments = "-sU -p 1900 --script=broadcast-upnp-info " + ip_range
+    scan_results = nm.scan(arguments=arguments)
 
 
-discover_ips('192.168.0.0/24')
+def discover_zigbee_hosts():
+    now = datetime.now()
+    date_string = now.strftime("%Y-%m-%d-%H-%M-%S")
+    timeout = 5
+
+    for channel in range(15, 16):
+        filename = "./zigbee_sniff_c{}_{}.pcap".format(channel, date_string)
+        start_time = time.time()
+
+        while (time.time() - start_time) < timeout:
+            result = subprocess.run(
+                ["sudo", "/opt/whsniff-1.3/whsniff", "-c", str(channel), ">", "/home/kali/" + filename])
+            print(result)
