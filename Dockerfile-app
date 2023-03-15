@@ -1,0 +1,17 @@
+# Base image
+FROM python:3.11
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the requirements file and install dependencies
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Copy the python script to the working directory
+COPY .core .
+COPY .scans .
+COPY main.py .
+
+# Run the python script when the container starts
+CMD ["python", "main.py"]
