@@ -47,33 +47,41 @@ async def bluetooth_enumeration():
     print("Discovering Bluetooth devices...")
     devices = await BleakScanner.discover()
     bluetooth_data = {}
+    nr_devices = str(len(devices))
+    print("Found " + nr_devices + " devices.")
+    print("Gathering information about devices...")
+    count = 0
 
     for device in devices:
+        count += 1
+        print(str(count) + "/" + nr_devices)
         try:
             this_device = await BleakScanner.find_device_by_address(device.address)
             async with BleakClient(this_device) as client:
-                print(f'Services found for device')
-                print(f'\tDevice address:{device.address}')
-                print(f'\tDevice name:{device.name}')
-
-                print('\tServices:')
+                devices_data = {
+                    "address": device.address,
+                    "name": device.name,
+                    "services": []
+                }
                 for service in client.services:
-                    print()
-                    print(f'\t\tDescription: {service.description}')
-                    print(f'\t\tService: {service}')
+                    service_data = {
+                        "name": service,
+                        "description": service.description,
+                        "characteristics": {}
+                    }
 
-                    print('\t\tCharacteristics:')
                     for c in service.characteristics:
-                        print()
-                        print(f'\t\t\tUUID: {c.uuid}'),
-                        print(f'\t\t\tDescription: {c.description}')
-                        print(f'\t\t\tHandle: {c.handle}'),
-                        print(f'\t\t\tProperties: {c.properties}')
-
-                        print('\t\tDescriptors:')
-                        for descrip in c.descriptors:
-                            print(descrip)
+                        service_data["characteristics"][c.uuid] = {
+                            "uuid": c.uuid,
+                            "description": c.description,
+                            "handle": c.handle,
+                            "properties": c.properties,
+                            "descriptors": []
+                        }
+                        for descriptor in c.descriptors:
+                            service_data["characteristics"][c.uuid]["descriptors"].append(descriptor)
+                bluetooth_data[device.address] = devices_data
         except:
-            print("Could not connect to device: " + str(device))
-
-asyncio.run(bluetooth_enumeration())
+            continue
+    print("Managed to gather information about " + str(len(bluetooth_data)) + " bluetooth devices.")
+    return bluetooth_data

@@ -27,25 +27,21 @@ def main():
         }
     }
 
+    # Enumerate hosts on local network
+    # discovered_ip_hosts = nmap_enumeration()
+    discovered_bluetooth_devices = asyncio.run(bluetooth_enumeration())
+
+    data["hosts"]["bluetooth"] = discovered_bluetooth_devices
+    # data["hosts"]["ip_network"] = discovered_ip_hosts
+    data["scan_end"] = str(datetime.datetime.now())
+
     # Create JSON file and insert initial data
     with open(path, "w") as file:
         json.dump(data, file)
         print("Created scan file at '" + path + "'")
 
-    # Enumerate hosts on local network
-    #discovered_ip_hosts = nmap_enumeration()
-    discovered_bluetooth_devices = asyncio.run(bluetooth_enumeration())
-
-    # Insert information about hosts to JSON file
-    with open(path, "r") as file:
-        json_data = json.load(file)
-
-    #json_data["hosts"]["ip_network"] = discovered_ip_hosts
-
-    with open(path, "w") as file:
-        json.dump(json_data, file)
-
-    print("Finished scan.")
+    # json_data["hosts"]["ip_network"] = discovered_ip_hosts
+    print("Finished device enumeration.")
 
 
 if __name__ == '__main__':

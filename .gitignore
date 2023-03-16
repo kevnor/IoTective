@@ -3,3 +3,4 @@
 scans/*
 docker-compose-backup.yml
 **/__pycache__/
+!scans/
