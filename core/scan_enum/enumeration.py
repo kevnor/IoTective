@@ -3,8 +3,13 @@ from nmap import PortScanner
 from core.host import get_default_gateway
 from configparser import ConfigParser
 from core.utility import subnet_to_cidr
+from bleak import BleakScanner, BleakClient
 import asyncio
-from bleak import BleakScanner
+
+
+def callback_result(host, scan_result):
+    print('--------------')
+    print(host, scan_result)
 
 
 # Nmap is used to discover open ports and detect OS
@@ -40,7 +45,35 @@ def nmap_enumeration():
 
 async def bluetooth_enumeration():
     devices = await BleakScanner.discover()
-    for d in devices:
-        print(d)
+    bluetooth_data = {}
 
-asyncio.run(bluetooth_enumeration())
+    for device in devices:
+        try:
+            this_device = await BleakScanner.find_device_by_address(device.address)
+            async with BleakClient(this_device) as client:
+                print(device)
+                print(client)
+                # print(f'Services found for device')
+                # print(f'\tDevice address:{device.address}')
+                # print(f'\tDevice name:{device.name}')
+                #
+                # print('\tServices:')
+                # for service in client.services:
+                #     print()
+                #     print(f'\t\tDescription: {service.description}')
+                #     print(f'\t\tService: {service}')
+                #
+                #     print('\t\tCharacteristics:')
+                #     for c in service.characteristics:
+                #         print()
+                #         print(f'\t\t\tUUID: {c.uuid}'),
+                #         print(f'\t\t\tDescription: {c.uuid}')
+                #         print(f'\t\t\tHandle: {c.uuid}'),
+                #         print(f'\t\t\tProperties: {c.uuid}')
+                #
+                #         print('\t\tDescriptors:')
+                #         for descrip in c.descriptors:
+                #             print(descrip)
+        except:
+            print("Could not connect to device: " + device)
+

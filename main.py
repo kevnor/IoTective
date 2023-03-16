@@ -1,6 +1,6 @@
 #!/bin/pyhton3
 
-from core.scan_enum.enumeration import nmap_enumeration
+from core.scan_enum.enumeration import nmap_enumeration, bluetooth_enumeration
 import json
 import os
 import time
@@ -32,18 +32,20 @@ def main():
         print("Created scan file at '" + path + "'")
 
     # Enumerate hosts on local network
-    discovered_hosts = nmap_enumeration()
+    discovered_ip_hosts = nmap_enumeration()
+    discovered_bluetooth_devices = bluetooth_enumeration()
 
     # Insert information about hosts to JSON file
     with open(path, "r") as file:
         json_data = json.load(file)
 
-    json_data["hosts"]["ip_network"] = discovered_hosts
+    json_data["hosts"]["ip_network"] = discovered_ip_hosts
 
     with open(path, "w") as file:
-        json.dump(data, file)
+        json.dump(json_data, file)
 
     print("Finished scan.")
+
 
 if __name__ == '__main__':
     main()
