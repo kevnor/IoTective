@@ -44,6 +44,7 @@ def nmap_enumeration():
 
 
 async def bluetooth_enumeration():
+    print("Discovering Bluetooth devices...")
     devices = await BleakScanner.discover()
     bluetooth_data = {}
 
@@ -51,29 +52,28 @@ async def bluetooth_enumeration():
         try:
             this_device = await BleakScanner.find_device_by_address(device.address)
             async with BleakClient(this_device) as client:
-                print(device)
-                print(client)
-                # print(f'Services found for device')
-                # print(f'\tDevice address:{device.address}')
-                # print(f'\tDevice name:{device.name}')
-                #
-                # print('\tServices:')
-                # for service in client.services:
-                #     print()
-                #     print(f'\t\tDescription: {service.description}')
-                #     print(f'\t\tService: {service}')
-                #
-                #     print('\t\tCharacteristics:')
-                #     for c in service.characteristics:
-                #         print()
-                #         print(f'\t\t\tUUID: {c.uuid}'),
-                #         print(f'\t\t\tDescription: {c.uuid}')
-                #         print(f'\t\t\tHandle: {c.uuid}'),
-                #         print(f'\t\t\tProperties: {c.uuid}')
-                #
-                #         print('\t\tDescriptors:')
-                #         for descrip in c.descriptors:
-                #             print(descrip)
-        except:
-            print("Could not connect to device: " + device)
+                print(f'Services found for device')
+                print(f'\tDevice address:{device.address}')
+                print(f'\tDevice name:{device.name}')
 
+                print('\tServices:')
+                for service in client.services:
+                    print()
+                    print(f'\t\tDescription: {service.description}')
+                    print(f'\t\tService: {service}')
+
+                    print('\t\tCharacteristics:')
+                    for c in service.characteristics:
+                        print()
+                        print(f'\t\t\tUUID: {c.uuid}'),
+                        print(f'\t\t\tDescription: {c.description}')
+                        print(f'\t\t\tHandle: {c.handle}'),
+                        print(f'\t\t\tProperties: {c.properties}')
+
+                        print('\t\tDescriptors:')
+                        for descrip in c.descriptors:
+                            print(descrip)
+        except:
+            print("Could not connect to device: " + str(device))
+
+asyncio.run(bluetooth_enumeration())

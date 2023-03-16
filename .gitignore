@@ -1,3 +1,5 @@
 .idea
 .venv
 scans/*
+docker-compose-backup.yml
+**/__pycache__/

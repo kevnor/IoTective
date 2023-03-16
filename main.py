@@ -5,6 +5,7 @@ import json
 import os
 import time
 import datetime
+import asyncio
 
 
 def main():
@@ -32,14 +33,14 @@ def main():
         print("Created scan file at '" + path + "'")
 
     # Enumerate hosts on local network
-    discovered_ip_hosts = nmap_enumeration()
-    discovered_bluetooth_devices = bluetooth_enumeration()
+    #discovered_ip_hosts = nmap_enumeration()
+    discovered_bluetooth_devices = asyncio.run(bluetooth_enumeration())
 
     # Insert information about hosts to JSON file
     with open(path, "r") as file:
         json_data = json.load(file)
 
-    json_data["hosts"]["ip_network"] = discovered_ip_hosts
+    #json_data["hosts"]["ip_network"] = discovered_ip_hosts
 
     with open(path, "w") as file:
         json.dump(json_data, file)
