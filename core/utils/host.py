@@ -23,6 +23,7 @@ duplex_map = {
 }
 
 
+# Finds and prints all network interfaces
 def get_nics():
     count = 0
     nics_dict = {}

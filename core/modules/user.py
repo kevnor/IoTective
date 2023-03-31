@@ -1,4 +1,4 @@
-from core.host import get_nics, get_usb_devices
+from core.utils.host import get_nics, get_usb_devices
 from prettytable import PrettyTable
 
 import json
@@ -37,10 +37,7 @@ def choose_nic():
     while True:
         chosen_nic = input("Choose a network interface (1 - " + str(len(nics)) + "):")
         if chosen_nic.isdigit() and int(chosen_nic) in nics:
-            print("You chose:")
-            print("==================================")
-            print(nics[int(chosen_nic)]["name"])
-            print("==================================")
+            print("You chose: " + nics[int(chosen_nic)]["name"])
             while True:
                 answer = input("Is this correct? (Y/n) ")
                 if answer.upper() == "Y":
