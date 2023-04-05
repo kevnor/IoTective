@@ -71,16 +71,10 @@ class Bridge:
         # Check if vulnerable to CVE-2020-6007 (Buffer Overflow)
         if self.api_version and self.api_version <= "1.31.0":
             self.cves["CVE-2020-6007"] = True
-            print(f"Philips Hue bridge at {self.ip} is vulnerable to CVE-2020-6007. Please update!")
-        else:
-            print(f"Philips Hue bridge at {self.ip} is patched against CVE-2020-6007")
 
         # Check if vulnerable to CVE-2017-14797 (Lack of Transport Encryption)
         if self.software_version and self.software_version < "1709131401":
             self.cves["CVE-2017-14797"] = True
-            print(f"Philips Hue bridge at {self.ip} is vulnerable to CVE-2017-14797. Please update!")
-        else:
-            print(f"Philips Hue bridge at {self.ip} is patched against CVE-2017-14797")
 
 
 def discover_philips_hue_bridge():

@@ -12,7 +12,7 @@ def display_bluetooth_devices():
 
     with open(path, "r") as file:
         json_file = json.loads(file.read())
-        bt_devices = json_file["hosts"]["bluetooth"]
+        bt_devices = json_file["hosts"]["ble"]
 
     table = PrettyTable()
     table.field_names = ["RSSI", "Address", "Name", "Services"]
@@ -37,7 +37,7 @@ def print_scan_type_config():
     scan_table = PrettyTable()
     scan_table.field_names = ["Scan Type", "Active"]
     scan_table.add_row(["IP Network", config.getboolean("Scan Types", "ip_network")])
-    scan_table.add_row(["Bluetooth", config.getboolean("Scan Types", "bluetooth")])
+    scan_table.add_row(["Bluetooth", config.getboolean("Scan Types", "ble")])
     scan_table.add_row(["ZigBee", config.getboolean("Scan Types", "zigbee")])
     scan_table.align = "l"
     print(scan_table)

@@ -1,6 +1,6 @@
 #!/bin/pyhton3
 import argparse
-from core.utils.configure import configure
+from core.utils.configuration import configure
 from core.modules.scanning import device_enumeration
 
 
