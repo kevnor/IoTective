@@ -99,3 +99,71 @@ def create_scan_file_path():
     path.append("scan_" + timestr + ".json")
     path = slash.join(path)
     return path
+
+
+def format_discovered_ip_hosts(scan_results):
+    output = {}
+    # Extract useful information from the scan
+    for host in scan_results["scan"]:
+        if host in ["127.0.0.1"] or "mac" not in scan_results["scan"][host]["addresses"]:
+            continue
+        output[host] = {
+            "addresses": scan_results["scan"][host]["addresses"],
+            "vendor": {},
+            "ports": {},
+            "os": {}
+        }
+        if "vendor" in scan_results["scan"][host] and scan_results["scan"][host]["vendor"]:
+            output[host]["vendor"] = scan_results["scan"][host]["vendor"][output[host]["addresses"]["mac"]]
+        if "tcp" in scan_results["scan"][host] and scan_results["scan"][host]["tcp"]:
+            output[host]["ports"] = scan_results["scan"][host]["tcp"]
+        if "osmatch" in scan_results["scan"][host] and scan_results["scan"][host]["osmatch"]:
+            output[host]["os"] = scan_results["scan"][host]["osmatch"]
+    return output
+
+
+def format_vulns_scan(ports):
+    # Example output:
+    # {
+    #     22: [
+    #         {
+    #             "name": "CVE-2021-28041",
+    #             "score": "4.6",
+    #             "url": "https://vulners.com/cve/CVE-2021-28041",
+    #         },
+    #         {
+    #             "name": "CVE-2021-41617",
+    #             "score": "4.4",
+    #             "url": "https://vulners.com/cve/CVE-2021-41617",
+    #         }
+    #     ],
+    #     80: [
+    #         {
+    #             "name": "CVE-2022-22707",
+    #             "score": "4.3",
+    #             "url": "https://vulners.com/cve/CVE-2022-22707",
+    #         }
+    #     ],
+    # }
+
+    port_cves = {}
+
+    for port in ports:
+        if 'script' in ports[port] \
+                and 'vulners' in ports['tcp'][port]['script']:
+            formatted_cves = []
+            output = ports[port]['script']['vulners']
+            nl = "\n"
+            output = output.split(''.join(nl))
+            cves = output[2:]
+            tab = '\t'
+            for cve in cves:
+                cve_data = cve.split(''.join(tab))
+                formatted_cve = {
+                    'name': cve_data[1],
+                    'score': cve_data[2],
+                    'url': cve_data[3]
+                }
+                formatted_cves.append(formatted_cve)
+            port_cves[port] = formatted_cves
+    return port_cves
