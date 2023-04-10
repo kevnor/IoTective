@@ -16,6 +16,7 @@ def check_wireless_mode():
             return mode
     else:
         print("Wireless mode not found")
+        return None
 
 
-check_wireless_mode()
+print(check_wireless_mode())
