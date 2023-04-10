@@ -2,6 +2,9 @@ from __future__ import print_function
 import socket
 import psutil
 import netifaces
+import subprocess
+from configparser import ConfigParser
+import os
 
 
 def get_default_gateway():
@@ -80,3 +83,38 @@ def get_usb_devices():
                 dinfo['device'] = '/dev/bus/usb/%s/%s' % (dinfo.pop('bus'), dinfo.pop('device').decode("utf-8"))
                 devices.append(dinfo)
     return devices
+
+
+def get_wireless_mode():
+    # Run the iwconfig command and capture the output
+    output = subprocess.check_output(['iwconfig'])
+
+    # Convert the output to a string and split it into lines
+    output = output.decode('utf-8')
+    lines = output.split('\n')
+
+    # Search for the wireless mode in the output
+    for line in lines:
+        if 'Mode:' in line:
+            mode = line.split('Mode:')[1].split()[0]
+            return mode
+    else:
+        print("Wireless mode not found")
+        return None
+
+
+def set_wireless_mode(mode="monitor"):
+    config_file = os.path.join(os.path.dirname(__file__), "../../config.ini")
+    config = ConfigParser()
+    config.read(config_file)
+
+    interface = config.get("Network Interface", "name")
+
+    try:
+        subprocess.check_call(["sudo", "iw", "dev", interface, "set", "type", mode])
+        print(f"Wireless mode set to {mode}")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error setting wireless mode: {e}")
+        return False
+
