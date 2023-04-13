@@ -2,7 +2,7 @@ import os
 from configparser import ConfigParser
 from core.modules.user import choose_nic
 from core.modules.output import print_scan_type_config, print_nic_config
-from core.utils.host import get_wireless_mode
+from core.utils.host import get_wireless_mode, get_interface_name
 
 
 def configure():
@@ -47,7 +47,7 @@ def configure():
         print_nic_config()
 
     # If Wi-Fi sniffing is enabled, ensure that adapter is in 'monitor' mode
-    if config.getboolean("Scan Types", "wifi_sniffing") and get_wireless_mode() != "Monitor":
+    if config.getboolean("Scan Types", "wifi_sniffing") and get_wireless_mode(interface=get_interface_name()) != "Monitor":
         nic_name = config.get("Network Interface", "name")
         print("WARNING: Your network adapter is not in monitor mode. Wi-Fi sniffing will not be possible.")
         print("Turn of Wi-Fi sniffing or perform the following operations before running the script:")
