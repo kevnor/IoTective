@@ -50,7 +50,7 @@ def configure():
     if config.getboolean("Scan Types", "wifi_sniffing") and get_wireless_mode(interface=get_interface_name()) != "Monitor":
         nic_name = config.get("Network Interface", "name")
         print("WARNING: Your network adapter is not in monitor mode. Wi-Fi sniffing will not be possible.")
-        print("Turn of Wi-Fi sniffing or perform the following operations before running the script:")
+        print("Turn off Wi-Fi sniffing or perform the following operations before running the script:")
         print(f" - $ sudo ifconfig {nic_name} down")
         print(f" - $ sudo iwconfig {nic_name} mode monitor")
         print(f" - $ sudo ifconfig {nic_name} up")
