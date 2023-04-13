@@ -1,15 +1,19 @@
 import asyncio
-
+import os
 import pyrcrack
+from configparser import ConfigParser
 
 
 async def capture_packets():
-    airmon = pyrcrack.AirmonNg()
-    interfaces = await airmon.interfaces
-    print(str(interfaces))
-    print(str([a.asdict() for a in interfaces]))
+    config_file = os.path.join(os.path.dirname(__file__), "../../config.ini")
+    config = ConfigParser()
+    config.read(config_file)
 
-    async with airmon("wlan0") as mon:
+    interface = config.get("Network Interface", "name")
+
+    airmon = pyrcrack.AirmonNg()
+
+    async with airmon(interface) as mon:
         async with pyrcrack.AirmonNg() as pdump:
             async for aps in pdump(mon.monitor_interface):
                 print(aps)
