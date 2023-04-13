@@ -10,6 +10,7 @@ from core.protocols.ble import bluetooth_enumeration
 from core.vendors.hue import discover_philips_hue_bridge
 from core.utils.nmap_scanner import nmap_enumeration, nmap_cpe_scan
 from core.utils.formatting import create_scan_file_path
+from core.modules.sniffing import capture_packets
 
 
 class TextColor:
@@ -60,6 +61,10 @@ def device_enumeration():
             else:
                 bridge_data = {"bridge": vars(discovered_bridges[bridge])}
                 data["hosts"]["ip_network"][discovered_bridges[bridge]["ip"]] = bridge_data
+
+    # Determine connectivity method (wired/Wi-Fi) for IP network devices through packet sniffing
+    if config.getboolean("Scan Types", "wifi_sniffing"):
+        capture_packets()
 
     # Discover and enumerate ble devices
     if config.getboolean("Scan Types", "ble"):

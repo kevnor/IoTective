@@ -1,5 +1,3 @@
-import argparse
-from scapy.layers.l2 import ARP, Ether, srp
 from scapy.sendrecv import sniff, wrpcap
 from core.utils.host import get_wireless_mode
 from configparser import ConfigParser
@@ -17,19 +15,6 @@ def capture_packets():
 
         capture = sniff(iface=nic_name, count=50)
         wrpcap("test.pcap", capture)
-
-        # request = ARP()
-        #
-        # request.pdst = '10.0.0.1/24'
-        # broadcast = Ether()
-        #
-        # broadcast.dst = 'ff:ff:ff:ff:ff:ff'
-        #
-        # request_broadcast = broadcast / request
-        #
-        # clients = srp(request_broadcast, timeout=10, verbose=1)[0]
-        # for element in clients:
-        #     print(element)
     else:
         print("Wireless adapter not in monitoring mode.")
 
