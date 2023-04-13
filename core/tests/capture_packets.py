@@ -2,9 +2,6 @@ import asyncio
 
 import pyrcrack
 
-from rich.console import Console
-from rich.prompt import Prompt
-
 
 async def capture_packets():
     airmon = pyrcrack.AirmonNg()
@@ -16,6 +13,7 @@ async def capture_packets():
         async with pyrcrack.AirmonNg() as pdump:
             async for aps in pdump(mon.monitor_interface):
                 print(aps)
+                break
 
 
 asyncio.run(capture_packets())
