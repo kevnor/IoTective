@@ -96,7 +96,7 @@ def get_interface_name():
 
 def get_wireless_mode(interface):
     # Run the iwconfig command and capture the output
-    completed_process = subprocess.run(['iwconfig',  {interface}], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    completed_process = subprocess.run(['iwconfig',  interface], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Check if there was an error running the command
     if completed_process.returncode != 0:
