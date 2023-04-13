@@ -1,5 +1,4 @@
 from bleak import BleakScanner
-import asyncio
 
 
 async def scan_devices(timeout=5):
