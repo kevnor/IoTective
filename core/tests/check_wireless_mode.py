@@ -3,7 +3,7 @@ import subprocess
 
 def check_wireless_mode():
     # Run the iwconfig command and capture the output
-    output = subprocess.check_output(['iwconfig'])
+    output = subprocess.run(['iwconfig'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
     # Convert the output to a string and split it into lines
     output = output.decode('utf-8')
