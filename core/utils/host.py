@@ -5,6 +5,7 @@ import netifaces
 import subprocess
 from configparser import ConfigParser
 import os
+import pywifi
 
 
 def get_default_gateway():
@@ -134,3 +135,16 @@ def set_wireless_mode(new_mode="Monitor"):
         except subprocess.CalledProcessError as e:
             print(f"Error setting wireless mode: {e}")
             return False
+
+
+def get_wifi_ssid():
+    ssid = os.open("sudo iwgetid -r").read()
+
+    if not ssid:
+        print("Could not determine SSID of connected Wi-Fi router. Are you sure you are connect over Wi-Fi?")
+        answer = input("Enter SSID manually? (Y/n)")
+        if answer.upper() == "Y" or answer == "":
+            ssid = input("SSID (the name of your Wi-Fi network): ")
+
+    return ssid
+

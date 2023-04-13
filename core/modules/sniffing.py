@@ -22,4 +22,7 @@ def capture_packets():
     # Set adapter to managed mode
     set_wireless_mode(new_mode="Managed")
 
+
 capture_packets()
+
+
