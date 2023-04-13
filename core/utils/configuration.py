@@ -46,25 +46,25 @@ def configure():
         print("Updated network interface configuration:")
         print_nic_config()
 
-    # If Wi-Fi sniffing is enabled, ensure that adapter is in 'monitor' mode
-    if config.getboolean("Scan Types", "wifi_sniffing"):
-        # Configure wireless adapter mode
-        if get_wireless_mode() != "Monitor":
-            print("WARNING: To perform packet sniffing, the network adapter needs to be in 'Monitoring' mode.")
-            print("(1): Skip Wi-Fi sniffing and continue")
-            print("(2): Quit and manually change to monitor mode")
-            while True:
-                answer = input("Answer (1, 2): ")
-                # Change wireless mode to "monitoring"
-                if answer == "1":
-                    config.set("Scan Types", "wifi_sniffing", "False")
-                    print("Disabled Wi-Fi sniffing")
-                    break
-                elif answer == "2":
-                    nic_name = config.get("Network Interface", "name")
-                    print("Perform the following operations before running the script again:")
-                    print(f" - $ sudo ifconfig {nic_name} down")
-                    print(f" - $ sudo iwconfig {nic_name} mode monitor")
-                    print(f" - $ sudo ifconfig {nic_name} up")
-                    break
+    # # If Wi-Fi sniffing is enabled, ensure that adapter is in 'monitor' mode
+    # if config.getboolean("Scan Types", "wifi_sniffing"):
+    #     # Configure wireless adapter mode
+    #     if get_wireless_mode() != "Monitor":
+    #         print("WARNING: To perform packet sniffing, the network adapter needs to be in 'Monitoring' mode.")
+    #         print("(1): Skip Wi-Fi sniffing and continue")
+    #         print("(2): Quit and manually change to monitor mode")
+    #         while True:
+    #             answer = input("Answer (1, 2): ")
+    #             # Change wireless mode to "monitoring"
+    #             if answer == "1":
+    #                 config.set("Scan Types", "wifi_sniffing", "False")
+    #                 print("Disabled Wi-Fi sniffing")
+    #                 break
+    #             elif answer == "2":
+    #                 nic_name = config.get("Network Interface", "name")
+    #                 print("Perform the following operations before running the script again:")
+    #                 print(f" - $ sudo ifconfig {nic_name} down")
+    #                 print(f" - $ sudo iwconfig {nic_name} mode monitor")
+    #                 print(f" - $ sudo ifconfig {nic_name} up")
+    #                 break
     print("Finished configuration.")
