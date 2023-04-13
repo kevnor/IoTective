@@ -13,3 +13,5 @@ plotly==5.14.1
 n2g~=0.3.3
 scapy~=2.5.0
 pywifi~=1.1.12
+pyrcrack~=1.2.6
+rich~=13.3.4
