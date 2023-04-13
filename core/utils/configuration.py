@@ -49,7 +49,7 @@ def configure():
     # If Wi-Fi sniffing is enabled, ensure that adapter is in 'monitor' mode
     if config.getboolean("Scan Types", "wifi_sniffing"):
         # Configure wireless adapter mode
-        if get_wireless_mode() != "Monitoring":
+        if get_wireless_mode() != "Monitor":
             print("WARNING: To perform packet sniffing, the network adapter needs to be in 'Monitoring' mode.")
             while True:
                 answer = input("Change adapter setting to 'Monitoring' mode? (This will restart the adapter) (n/Y)")
