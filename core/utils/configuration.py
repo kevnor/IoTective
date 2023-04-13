@@ -51,23 +51,20 @@ def configure():
         # Configure wireless adapter mode
         if get_wireless_mode() != "Monitor":
             print("WARNING: To perform packet sniffing, the network adapter needs to be in 'Monitoring' mode.")
+            print("(1): Skip Wi-Fi sniffing and continue")
+            print("(2): Quit and manually change to monitor mode")
             while True:
-                answer = input("Change adapter setting to 'Monitoring' mode? (This will restart the adapter) (n/Y)")
-
+                answer = input("Answer (1, 2): ")
                 # Change wireless mode to "monitoring"
-                if answer.upper() == "Y" or answer == "":
-                    nic_name = config.get("Network Interface", "name")
-                    os.system(f"sudo ifconfig {nic_name} down")
-                    os.system(f"sudo iwconfig {nic_name} mode monitor")
-                    os.system(f"sudo ifconfig {nic_name} up")
-
-                    if get_wireless_mode() == "Monitoring":
-                        print(f"{nic_name} is not in monitor mode")
-                    else:
-                        print(f"Failed to put {nic_name} into monitor mode")
-                    break
-                elif answer.upper() == "N":
-                    print("Packet sniffing will not be performed")
+                if answer == 1:
                     config.set("Scan Types", "wifi_sniffing", "False")
-
+                    print("Disabled Wi-Fi sniffing")
+                    break
+                elif answer == 2:
+                    nic_name = config.get("Network Interface", "name")
+                    print("Perform the following operations before running the script again:")
+                    print(f" - $ sudo ifconfig {nic_name} down")
+                    print(f" - $ sudo iwconfig {nic_name} mode monitor")
+                    print(f" - $ sudo ifconfig {nic_name} up")
+                    break
     print("Finished configuration.")
