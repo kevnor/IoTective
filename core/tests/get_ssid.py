@@ -1,7 +1,7 @@
 import os
 
 def get_wifi_ssid():
-    ssid = os.open("sudo iwgetid -r").read()
+    ssid = os.popen("sudo iwgetid -r").read()
 
     if not ssid:
         print("Could not determine SSID of connected Wi-Fi router. Are you sure you are connect over Wi-Fi?")
