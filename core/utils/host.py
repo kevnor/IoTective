@@ -94,13 +94,13 @@ def get_interface_name():
     return config.get("Network Interface", "name")
 
 
-def get_wireless_mode():
+def get_wireless_mode(interface):
     # Run the iwconfig command and capture the output
-    completed_process = subprocess.run(['iwconfig'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    completed_process = subprocess.run([f'iwconfig {interface}'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Check if there was an error running the command
     if completed_process.returncode != 0:
-        print(f"Error running iwconfig: {completed_process.stderr.decode().strip()}")
+        print(f"Error running iwconfig {interface}: {completed_process.stderr.decode().strip()}")
         return None
 
     # Convert the output to a string and split it into lines
@@ -138,13 +138,17 @@ def set_wireless_mode(new_mode="Monitor"):
 
 
 def get_wifi_ssid():
-    ssid = os.open("sudo iwgetid -r").read()
+    ssid = os.popen("sudo iwgetid -r").read()
 
     if not ssid:
         print("Could not determine SSID of connected Wi-Fi router. Are you sure you are connect over Wi-Fi?")
-        answer = input("Enter SSID manually? (Y/n)")
-        if answer.upper() == "Y" or answer == "":
-            ssid = input("SSID (the name of your Wi-Fi network): ")
 
+        while True:
+            answer = input("Enter SSID manually? (Y/n)")
+            if answer.upper() == "Y" or answer == "":
+                ssid = input("SSID (the name of your Wi-Fi network): ")
+                break
+            elif answer.upper() == "N":
+                return False
     return ssid
 

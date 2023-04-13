@@ -2,9 +2,12 @@ from scapy.sendrecv import sniff, wrpcap
 from core.utils.host import get_wireless_mode, set_wireless_mode
 from configparser import ConfigParser
 import os
+import pyrcrack
 
 
 def capture_packets():
+    airmon = pyrcrack.AirmonNg()
+    interfaces = await airmon.interfaces
     wireless_mode = get_wireless_mode()
     config_file = os.path.join(os.path.dirname(__file__), "../../config.ini")
     config = ConfigParser()
@@ -21,8 +24,3 @@ def capture_packets():
 
     # Set adapter to managed mode
     set_wireless_mode(new_mode="Managed")
-
-
-capture_packets()
-
-

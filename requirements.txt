@@ -12,3 +12,4 @@ networkx==3.1
 plotly==5.14.1
 n2g~=0.3.3
 scapy~=2.5.0
+pywifi~=1.1.12

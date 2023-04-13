@@ -11,6 +11,7 @@ from core.vendors.hue import discover_philips_hue_bridge
 from core.utils.nmap_scanner import nmap_enumeration, nmap_cpe_scan
 from core.utils.formatting import create_scan_file_path
 from core.modules.sniffing import capture_packets
+from core.utils.host import get_wifi_ssid
 
 
 class TextColor:
@@ -64,7 +65,11 @@ def device_enumeration():
 
     # Determine connectivity method (wired/Wi-Fi) for IP network devices through packet sniffing
     if config.getboolean("Scan Types", "wifi_sniffing"):
-        capture_packets()
+        ssid = get_wifi_ssid()
+        if not ssid:
+            print("Skipping Wi-Fi sniffing")
+        else:
+            capture_packets()
 
     # Discover and enumerate ble devices
     if config.getboolean("Scan Types", "ble"):
@@ -78,4 +83,3 @@ def device_enumeration():
     with open(path, "w") as file:
         json.dump(data, file, indent=4)
     print("Created scan file at '" + path + "'")
-    print("Finished.")
