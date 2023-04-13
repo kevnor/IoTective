@@ -1,48 +1,37 @@
 import argparse
 from scapy.layers.l2 import ARP, Ether, srp
-from scapy.sendrecv import sniff
-from core.utils.host import check_wireless_mode
-
-# def parse():
-# # Parse command line arguments
-# parser = argparse.ArgumentParser()
-# parser.add_argument("pcap_file", help="Path to the pcap file")
-# args = parser.parse_args()
-#
-# # Load the pcap file and extract Wi-Fi packets
-# packets = rdpcap(args.pcap_file)
-# wifi_packets = [p for p in packets if p.haslayer(Dot11)]
-#
-# # Extract unique MAC addresses from the Wi-Fi packets
-# mac_addresses = set()
-# for packet in wifi_packets:
-#     mac_addresses.add(packet.addr2)
-#
-# # Print the list of MAC addresses
-# print("The following devices were identified:")
-# for mac in mac_addresses:
-#     print(mac)
+from scapy.sendrecv import sniff, wrpcap
+from core.utils.host import get_wireless_mode
+from configparser import ConfigParser
+import os
 
 
 def capture_packets():
-    wireless_mode = check_wireless_mode()
+    wireless_mode = get_wireless_mode()
     if wireless_mode == "Monitoring":
-        capture = sniff()
+        config_file = os.path.join(os.path.dirname(__file__), "../../config.ini")
+        config = ConfigParser()
+        config.read(config_file)
 
-        request = ARP()
+        nic_name = config.get("Network Interface", "name")
 
-        request.pdst = '10.0.0.1/24'
-        broadcast = Ether()
+        capture = sniff(iface=nic_name, count=50)
+        wrpcap("test.pcap", capture)
 
-        broadcast.dst = 'ff:ff:ff:ff:ff:ff'
-
-        request_broadcast = broadcast / request
-
-        clients = srp(request_broadcast, timeout=10, verbose=1)[0]
-        for element in clients:
-            print(element)
+        # request = ARP()
+        #
+        # request.pdst = '10.0.0.1/24'
+        # broadcast = Ether()
+        #
+        # broadcast.dst = 'ff:ff:ff:ff:ff:ff'
+        #
+        # request_broadcast = broadcast / request
+        #
+        # clients = srp(request_broadcast, timeout=10, verbose=1)[0]
+        # for element in clients:
+        #     print(element)
     else:
-        print("Wireless adapte")
+        print("Wireless adapter not in monitoring mode.")
 
 
 capture_packets()

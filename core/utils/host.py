@@ -85,9 +85,19 @@ def get_usb_devices():
     return devices
 
 
+def get_interface_name():
+    config_file = os.path.join(os.path.dirname(__file__), "../../config.ini")
+    config = ConfigParser()
+    config.read(config_file)
+
+    return config.get("Network Interface", "name")
+
+
 def get_wireless_mode():
+    interface = get_interface_name()
+
     # Run the iwconfig command and capture the output
-    output = subprocess.check_output(['iwconfig'])
+    output = subprocess.check_output(['iwconfig', interface])
 
     # Convert the output to a string and split it into lines
     output = output.decode('utf-8')
@@ -103,18 +113,21 @@ def get_wireless_mode():
         return None
 
 
-def set_wireless_mode(mode="monitor"):
-    config_file = os.path.join(os.path.dirname(__file__), "../../config.ini")
-    config = ConfigParser()
-    config.read(config_file)
+def set_wireless_mode(new_mode="Monitor"):
+    current_mode = get_wireless_mode()
+    interface = get_interface_name()
 
-    interface = config.get("Network Interface", "name")
-
-    try:
-        subprocess.check_call(["sudo", "iw", "dev", interface, "set", "type", mode])
-        print(f"Wireless mode set to {mode}")
+    if current_mode == new_mode:
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"Error setting wireless mode: {e}")
-        return False
+    else:
+        try:
+            subprocess.check_call(["sudo", "ifconfig", interface, "down"])
+            subprocess.check_call(["sudo", "iwconfig", interface, "mode", "monitor"])
+            subprocess.check_call(["sudo", "ifconfig", interface, "up"])
 
+            subprocess.check_call(["sudo", "iw", "dev", interface, "set", "type", new_mode])
+            print(f"Wireless mode set to {new_mode}")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"Error setting wireless mode: {e}")
+            return False
