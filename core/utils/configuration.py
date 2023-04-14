@@ -6,48 +6,75 @@ from core.utils.host import get_wireless_mode, get_interface_name
 
 
 def configure():
+    """Main configuration function"""
+    configure_scan_types()
+
+
+def get_config():
+    """Get configuration and configuration file"""
     config_file = os.path.join(os.path.dirname(__file__), "../../config.ini")
     config = ConfigParser()
     config.read(config_file)
+    return config, config_file
 
-    # Configure scan types
+
+def configure_scan_types():
+    """Configure scan types"""
+    config, config_file = get_config()
+
     print("Current scan types configuration:")
     print_scan_type_config()
-    change_scan_types = input("Change scan types? (y/N)")
-    if change_scan_types.upper() == "Y":
-        scan_types_config = {
-            "ip_network": input("Scan IP network? (Y/n)"),
-            "wifi_sniffing": input("Perform Wi-Fi sniffing?"),
-            "ble": input("Scan for BLE devices? (Y/n)"),
-            "zigbee": input("Scan for ZigBee devices? (Y/n)")
-        }
-        for s_type in scan_types_config:
-            if scan_types_config[s_type].upper() in ["Y", ""]:
-                config.set("Scan Types", s_type, "True")
-            elif scan_types_config[s_type].upper() == "N":
-                config.set("Scan Types", s_type, "False")
-        with open(config_file, "w") as configfile:
-            config.write(configfile)
-        print("Updated scan types configuration:")
-        print_scan_type_config()
+    while True:
+        change_scan_types = input("Change scan types? (y/N)")
+        if change_scan_types.upper() == "Y":
+            scan_types_config = {
+                "ip_network": input("Scan IP network? (Y/n)"),
+                "wifi_sniffing": input("Perform Wi-Fi sniffing?"),
+                "ble": input("Scan for BLE devices? (Y/n)"),
+                "zigbee": input("Scan for ZigBee devices? (Y/n)")
+            }
+            for s_type in scan_types_config:
+                if scan_types_config[s_type].upper() in ["Y", ""]:
+                    config.set("Scan Types", s_type, "True")
+                elif scan_types_config[s_type].upper() == "N":
+                    config.set("Scan Types", s_type, "False")
+            with open(config_file, "w") as configfile:
+                config.write(configfile)
+            print("Updated scan types configuration:")
+            print_scan_type_config()
+            break
+        elif change_scan_types.upper() == "N" or change_scan_types == "":
+            break
 
-    # Configure network interface for IP scanning
+
+def configure_network_interface():
+    """Configure network interface for IP scanning"""
+    config, config_file = get_config()
+
     print("Current network interface configuration:")
     print_nic_config()
-    answer = input("Change configuration? (y/N)")
-    if answer.upper() == "Y":
-        nic = choose_nic()
-        config.set("Network Interface", "name", nic["name"])
-        config.set("Network Interface", "ipv4", nic["IPv4"]["address"])
-        config.set("Network Interface", "netmask", nic["IPv4"]["netmask"])
-        config.set("Network Interface", "mac", nic["MAC"]["address"])
-        with open(config_file, "w") as configfile:
-            config.write(configfile)
-        print("Updated network interface configuration:")
-        print_nic_config()
+    while True:
+        answer = input("Change configuration? (y/N)")
+        if answer.upper() == "Y":
+            nic = choose_nic()
+            config.set("Network Interface", "name", nic["name"])
+            config.set("Network Interface", "ipv4", nic["IPv4"]["address"])
+            config.set("Network Interface", "netmask", nic["IPv4"]["netmask"])
+            config.set("Network Interface", "mac", nic["MAC"]["address"])
+            with open(config_file, "w") as configfile:
+                config.write(configfile)
+            print("Updated network interface configuration:")
+            print_nic_config()
+            break
+        elif answer.upper() == "N" or answer == "":
+            break
 
-    # If Wi-Fi sniffing is enabled, ensure that adapter is in 'monitor' mode
-    if config.getboolean("Scan Types", "wifi_sniffing") and get_wireless_mode(interface=get_interface_name()) != "Monitor":
+
+def configure_sniffer():
+    """If Wi-Fi sniffing is enabled, ensure that adapter is in 'monitor' mode"""
+    config, config_file = get_config()
+    if config.getboolean("Scan Types", "wifi_sniffing") and get_wireless_mode(
+            interface=get_interface_name()) != "Monitor":
         nic_name = config.get("Network Interface", "name")
         print("WARNING: Your network adapter is not in monitor mode. Wi-Fi sniffing will not be possible.")
         print("Turn off Wi-Fi sniffing or perform the following operations before running the script:")
