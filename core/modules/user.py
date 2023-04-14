@@ -1,5 +1,8 @@
 from core.utils.host import get_nics, get_usb_devices
 from prettytable import PrettyTable
+from core.modules.output import print_nics, print_wireless_networks
+from rich.console import Console
+from rich.prompt import Prompt
 
 import json
 
@@ -34,19 +37,10 @@ def choose_nic():
         print("Could not find any network interfaces.")
         return
 
-    while True:
-        chosen_nic = input("Choose a network interface (1 - " + str(len(nics)) + "):")
-        if chosen_nic.isdigit() and int(chosen_nic) in nics:
-            print("You chose: " + nics[int(chosen_nic)]["name"])
-            while True:
-                answer = input("Is this correct? (Y/n) ")
-                if answer.upper() == "Y":
-                    return nics[int(chosen_nic)]
-                elif answer.upper() == "N":
-                    break
-            continue
-        else:
-            print("Provide a number between 1 and " + str(len(nics)) + ".")
+    print_nics(nics)
+    nic_nrs = [str(nic) for nic in nics]
+    chosen_nic = Prompt.ask("Choose a network interface for IP scanning: ", choices=nic_nrs)
+    return nics[int(chosen_nic)]
 
 
 def choose_targets():
@@ -102,3 +96,15 @@ def choose_targets():
             break
         print("Invalid input.")
     return new_hosts
+
+
+def choose_ssid(profiles):
+    console = Console()
+    console.clear()
+    print_wireless_networks(profiles)
+    options = [str(i+1) for i in range(len(profiles))]
+
+    chosen_network = Prompt.ask("Choose a network to perform sniffing on: ", choices=options, show_choices=False)
+    console.clear()
+
+    return profiles[int(chosen_network) - 1]

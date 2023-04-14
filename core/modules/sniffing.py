@@ -1,5 +1,5 @@
 from scapy.sendrecv import sniff, wrpcap
-from core.utils.host import get_wireless_mode, set_wireless_mode
+from core.utils.sniffer import get_wireless_mode, set_wireless_mode
 from configparser import ConfigParser
 import os
 

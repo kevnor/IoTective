@@ -11,7 +11,7 @@ from core.vendors.hue import discover_philips_hue_bridge
 from core.utils.nmap_scanner import nmap_enumeration, nmap_cpe_scan
 from core.utils.formatting import create_scan_file_path
 from core.modules.sniffing import capture_packets
-from core.utils.host import get_wifi_ssid
+from core.utils.sniffer import get_wifi_ssid
 
 
 class TextColor:
