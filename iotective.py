@@ -1,7 +1,7 @@
 #!/bin/pyhton3
 import argparse
 from core.modules.configuration import configure
-from core.modules.scanning import device_enumeration
+from core.modules.main import main as scan
 
 
 def main():
@@ -33,7 +33,7 @@ def main():
         configure()
 
     if args.run:
-        device_enumeration()
+        scan()
 
 
 if __name__ == '__main__':

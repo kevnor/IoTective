@@ -104,7 +104,7 @@ def choose_ssid(profiles):
     print_wireless_networks(profiles)
     options = [str(i+1) for i in range(len(profiles))]
 
-    chosen_network = Prompt.ask("Choose a network to perform sniffing on: ", choices=options, show_choices=False)
+    chosen_network = Prompt.ask("Choose a network to perform sniffing on", choices=options, show_choices=False)
     console.clear()
 
-    return profiles[int(chosen_network) - 1]
+    return profiles[int(chosen_network) - 1]["ssid"]

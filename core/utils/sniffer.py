@@ -1,14 +1,11 @@
 import subprocess
-import os
 import pyrcrack
 import asyncio
-from rich.console import Console
-import time
 import pywifi
-from pywifi import const
 import logging
 
 from core.utils.host import get_interface_name
+from core.modules.output import print_error
 
 
 async def get_wireless_interfaces():
@@ -16,7 +13,8 @@ async def get_wireless_interfaces():
     interfaces = await airmon.interfaces
     interfaces_dict = []
     for interface in interfaces:
-        interfaces_dict.append(interface.asdict())
+        int_dict = interface.asdict()
+        interfaces_dict.append(int_dict)
     return interfaces_dict
 
 
@@ -59,7 +57,7 @@ def set_wireless_mode(new_mode="Monitor"):
             print(f"Wireless mode set to {new_mode}")
             return True
         except subprocess.CalledProcessError as e:
-            print(f"Error setting wireless mode: {e}")
+            print_error(e)
             return False
 
 
@@ -78,6 +76,8 @@ async def get_wifi_ssid(interface):
 
         profiles = []
         for profile in int_face.scan_results():
+            if profile.ssid.startswith("\x00\x00"):
+                continue
             profiles.append({
                 'ssid': profile.ssid,
                 'bssid': profile.bssid

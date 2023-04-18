@@ -104,11 +104,11 @@ def create_scan_file_path():
 def format_discovered_ip_hosts(scan_results):
     output = {}
     # Extract useful information from the scan
-    for host in scan_results["scan"]:
-        if host in ["127.0.0.1"] or "mac" not in scan_results["scan"][host]["addresses"]:
+    for host in scan_results:
+        if host in ["127.0.0.1"] or "mac" not in scan_results[host]["addresses"]:
             continue
         output[host] = {
-            "addresses": scan_results["scan"][host]["addresses"],
+            "addresses": scan_results[host]["addresses"],
             "vendor": {},
             "ports": {},
             "os": {}

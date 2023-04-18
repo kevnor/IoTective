@@ -91,7 +91,7 @@ def print_nic_config():
 
 def print_wireless_interfaces(interfaces):
     if len(interfaces) < 1:
-        print("ERROR: No suitable adapters found")
+        print_error("No suitable adapters found")
         return False
     else:
         table = Table(title="Available Wireless Adapters")
@@ -118,7 +118,7 @@ def print_wireless_interfaces(interfaces):
 
 def print_wireless_networks(profiles):
     if len(profiles) < 1:
-        print("ERROR: No networks found")
+        print_error("No networks found")
         return False
     else:
         table = Table(title="Available Wireless Networks")
@@ -140,3 +140,10 @@ def print_wireless_networks(profiles):
         console.clear()
         console.print(table)
 
+
+def print_error(message):
+    console = Console()
+    text = Text()
+    text.append("ERROR: ", style="bold red")
+    text.append(message)
+    console.print(text)

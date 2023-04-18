@@ -1,13 +1,10 @@
 from scapy.sendrecv import sniff, wrpcap
 from core.utils.sniffer import get_wireless_mode, set_wireless_mode
-from configparser import ConfigParser
-import os
+from core.utils.directory import get_config
 
 
-def capture_packets():
-    config_file = os.path.join(os.path.dirname(__file__), "../../config.ini")
-    config = ConfigParser()
-    config.read(config_file)
+def wifi_sniffing():
+    config, config_file = get_config()
 
     nic_name = config.get("Network Interface", "name")
     wireless_mode = get_wireless_mode(interface=nic_name)
