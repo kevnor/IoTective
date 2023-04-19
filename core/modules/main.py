@@ -1,51 +1,64 @@
-from core.utils.directory import get_config
-from core.utils.formatting import subnet_to_cidr
-from core.modules.scanning import ip_scanning
-import json
-import datetime
 import asyncio
-from rich.console import Console
+import datetime
+import logging
+import pathlib
+from logging.handlers import RotatingFileHandler
 
-# Functions:
 from core.actions.ble_enumeration import bluetooth_enumeration
 from core.actions.packet_capture import wifi_sniffing
-from core.utils.directory import create_scan_file
+from core.modules.scanning import ip_scanning
+from core.utils.directory import create_scan_file, get_config
+from core.utils.formatting import subnet_to_cidr
 
 
-def main():
+def setup_logging():
+    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler = RotatingFileHandler('scan.log', mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding=None, delay=0)
+    file_handler.setFormatter(log_formatter)
+    file_handler.setLevel(logging.INFO)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    console_handler.setLevel(logging.INFO)
+    logger = logging.getLogger()
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    logger.setLevel(logging.INFO)
+
+
+async def scan_ip_network(ip, netmask):
+    ip_range = f"{ip}/{subnet_to_cidr(netmask)}"
+    logging.info(f"Performing host discovery and port scanning on IP range {ip_range}...")
+    hosts = await ip_scanning()
+    logging.info(f"Discovered {len(hosts)} hosts using nmap")
+    return hosts
+
+
+async def main():
     config, config_file = get_config()
-    console = Console()
-    console.clear()
+    setup_logging()
+
     data, path = create_scan_file()
-    console.log(f"Created scan file at '" + path + "'")
+    logging.info(f"Created scan file at '{path}'")
 
-    with console.status("Working..."):
-        # Enumerate devices on the network using nmap
-        if config.getboolean("Scan Types", "ip_network"):
-            ip = config.get("Network Interface", "ipv4")
-            netmask = config.get("Network Interface", "netmask")
-            ip_range = f"{ip}/{subnet_to_cidr(netmask)}"
+    tasks = []
 
-            console.log("Initializing IP scanning...")
-            console.log(f"Performing host discovery and port scanning on IP range {ip_range}...")
-            data["hosts"]["ip_network"] = ip_scanning()
-            console.log(f"Discovered [cyan]{len(data['hosts']['ip_network'])}[/cyan] hosts using nmap")
+    # Enumerate devices on the network using nmap
+    if config.getboolean("Scan Types", "ip_network"):
+        ip = config.get("Network Interface", "ipv4")
+        netmask = config.get("Network Interface", "netmask")
+        tasks.append(asyncio.create_task(scan_ip_network(ip, netmask)))
 
-        # Determine connectivity method (wired/Wi-Fi) for IP network devices through packet sniffing
-        if config.getboolean("Scan Types", "wifi_sniffing"):
-            console.log("Initializing Wi-Fi sniffing...")
-            wifi_sniffing()
-            console.log("Finished Wi-Fi sniffing")
+    # Determine connectivity method (wired/Wi-Fi) for IP network devices through packet sniffing
+    if config.getboolean("Scan Types", "wifi_sniffing"):
+        tasks.append(asyncio.create_task(wifi_sniffing()))
 
-        # Discover and enumerate ble devices
-        if config.getboolean("Scan Types", "ble"):
-            console.log("Initializing Bluetooth LE enumeration...")
-            data["hosts"]["ble"] = asyncio.run(bluetooth_enumeration())
-            console.log(f"Discovered [cyan]{len(data['hosts']['ble'])}[/cyan] Bluetooth LE devices")
+    # Discover and enumerate ble devices
+    if config.getboolean("Scan Types", "ble"):
+        tasks.append(asyncio.create_task(bluetooth_enumeration()))
 
-        data["scan_end"] = str(datetime.datetime.now())
-        console.log(f"Scan finished at {data['scan_end']}")
+    await asyncio.gather(*tasks)
 
-        # Create JSON file and insert data
-        with open(path, "w") as file:
-            json.dump(data, file, indent=4)
+    data["scan_end"] = str(datetime.datetime.now())
+    logging.info(f"Scan finished at {data['scan_end']}")
+
+
