@@ -1,5 +1,9 @@
+import json
 import os
 from configparser import ConfigParser
+import datetime
+
+from core.utils.formatting import create_scan_file_path
 
 
 def get_config():
@@ -25,3 +29,24 @@ def get_latest_scan_path():
     files.sort()
 
     return path + "/" + files[-1]
+
+
+def create_scan_file():
+    path = create_scan_file_path()
+
+    # Initial data for JSON scan file
+    data = {
+        "scan_start": str(datetime.datetime.now()),
+        "scan_end": "",
+        "hosts": {
+            "ip_network": {},
+            "ble": {},
+            "zigbee": {}
+        },
+        "vulnerabilities": {}
+    }
+
+    with open(path, "w") as file:
+        json.dump(data, file, indent=4)
+
+    return data, path

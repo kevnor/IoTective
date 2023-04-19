@@ -1,33 +1,24 @@
 from core.utils.directory import get_config
-from core.utils.formatting import create_scan_file_path, subnet_to_cidr
-from core.modules.ip_scanning import ip_scanning
+from core.utils.formatting import subnet_to_cidr
+from core.modules.scanning import ip_scanning
 import json
 import datetime
 import asyncio
 from rich.console import Console
 
 # Functions:
-from core.protocols.ble import bluetooth_enumeration
-from core.modules.sniffing import wifi_sniffing
+from core.actions.ble_enumeration import bluetooth_enumeration
+from core.actions.packet_capture import wifi_sniffing
+from core.utils.directory import create_scan_file
 
 
 def main():
     config, config_file = get_config()
-    path = create_scan_file_path()
     console = Console()
     console.clear()
+    data, path = create_scan_file()
+    console.log(f"Created scan file at '" + path + "'")
 
-    # Initial data for JSON scan file
-    data = {
-        "scan_start": str(datetime.datetime.now()),
-        "scan_end": "",
-        "hosts": {
-            "ip_network": {},
-            "ble": {},
-            "zigbee": {}
-        },
-        "vulnerabilities": {}
-    }
     with console.status("Working..."):
         # Enumerate devices on the network using nmap
         if config.getboolean("Scan Types", "ip_network"):
@@ -58,4 +49,3 @@ def main():
         # Create JSON file and insert data
         with open(path, "w") as file:
             json.dump(data, file, indent=4)
-        console.log(f"Created scan file at '" + path + "'")

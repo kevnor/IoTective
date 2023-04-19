@@ -2,10 +2,11 @@ from __future__ import print_function
 import socket
 import psutil
 import netifaces
-import subprocess
 from configparser import ConfigParser
 import os
+import subprocess
 import pyrcrack
+from core.utils.console import print_error
 
 
 def get_default_gateway():
@@ -85,19 +86,56 @@ def get_interface_name():
     return config.get("Network Interface", "name")
 
 
+
+
 async def get_wireless_interfaces():
     airmon = pyrcrack.AirmonNg()
     interfaces = await airmon.interfaces
     interfaces_dict = []
     for interface in interfaces:
-        interfaces_dict.append(interface.asdict())
+        int_dict = interface.asdict()
+        interfaces_dict.append(int_dict)
     return interfaces_dict
 
 
+def get_wireless_mode(interface):
+    # Run the iwconfig command and capture the output
+    completed_process = subprocess.run(['iwconfig',  interface], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Check if there was an error running the command
+    if completed_process.returncode != 0:
+        print(f"Error running iwconfig {interface}: {completed_process.stderr.decode().strip()}")
+        return None
+
+    # Convert the output to a string and split it into lines
+    output = completed_process.stdout.decode('utf-8')
+    lines = output.split('\n')
+
+    # Search for the wireless mode in the output
+    for line in lines:
+        if 'Mode:' in line:
+            mode = line.split('Mode:')[1].split()[0]
+            return mode
+    else:
+        print("Wireless mode not found")
+        return None
 
 
+def set_wireless_mode(new_mode="Monitor"):
+    interface = get_interface_name()
+    current_mode = get_wireless_mode(interface)
 
+    if current_mode == new_mode:
+        return True
+    else:
+        try:
+            subprocess.check_call(["sudo", "ifconfig", interface, "down"])
+            subprocess.check_call(["sudo", "iwconfig", interface, "mode", "monitor"])
+            subprocess.check_call(["sudo", "ifconfig", interface, "up"])
 
-
-
-
+            subprocess.check_call(["sudo", "iw", "dev", interface, "set", "type", new_mode])
+            print(f"Wireless mode set to {new_mode}")
+            return True
+        except subprocess.CalledProcessError as e:
+            print_error(e)
+            return False

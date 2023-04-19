@@ -1,6 +1,6 @@
 from core.utils.host import get_nics, get_usb_devices
 from prettytable import PrettyTable
-from core.modules.output import print_nics, print_wireless_networks
+from core.utils.console import print_nics, print_wireless_networks
 from rich.console import Console
 from rich.prompt import Prompt
 

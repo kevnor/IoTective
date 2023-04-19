@@ -1,6 +1,7 @@
 #!/bin/pyhton3
 from core.vendors.hue import discover_philips_hue_bridge
-from core.utils.nmap_scanner import nmap_enumeration, nmap_cpe_scan
+from core.actions.nmap_host_enum import nmap_enumeration
+from core.actions.nmap_vuln_detect import nmap_cpe_scan
 from rich.console import Console
 
 

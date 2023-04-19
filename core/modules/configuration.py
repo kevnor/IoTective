@@ -1,7 +1,8 @@
 from core.modules.user import choose_nic, choose_ssid
-from core.modules.output import print_scan_type_config, print_nic_config
-from core.utils.sniffer import get_wifi_ssid, get_wireless_interfaces
-from core.modules.output import print_wireless_interfaces
+from core.utils.console import print_scan_type_config, print_nic_config
+from core.utils.host import get_wireless_interfaces
+from core.actions.packet_capture import get_wifi_ssid
+from core.utils.console import print_wireless_interfaces
 from core.utils.directory import get_config
 import asyncio
 from rich.console import Console
@@ -93,4 +94,3 @@ def configure_sniffer():
 
         with open(config_file, "w") as configfile:
             config.write(configfile)
-
