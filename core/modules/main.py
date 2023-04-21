@@ -1,64 +1,55 @@
-import asyncio
+from core.actions.nmap_host_enum import arp_scan, ping_scan, port_scan
+from core.utils.directory import get_config
+from core.utils.formatting import subnet_to_cidr
+from core.modules.scanning import ip_scanning, ScanType
+import json
 import datetime
-import logging
-import pathlib
-from logging.handlers import RotatingFileHandler
+import asyncio
+from rich.console import Console
 
+# Functions:
 from core.actions.ble_enumeration import bluetooth_enumeration
 from core.actions.packet_capture import wifi_sniffing
-from core.modules.scanning import ip_scanning
-from core.utils.directory import create_scan_file, get_config
-from core.utils.formatting import subnet_to_cidr
-
-
-def setup_logging():
-    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    file_handler = RotatingFileHandler('scan.log', mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding=None, delay=0)
-    file_handler.setFormatter(log_formatter)
-    file_handler.setLevel(logging.INFO)
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(log_formatter)
-    console_handler.setLevel(logging.INFO)
-    logger = logging.getLogger()
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
-    logger.setLevel(logging.INFO)
-
-
-async def scan_ip_network(ip, netmask):
-    ip_range = f"{ip}/{subnet_to_cidr(netmask)}"
-    logging.info(f"Performing host discovery and port scanning on IP range {ip_range}...")
-    hosts = await ip_scanning()
-    logging.info(f"Discovered {len(hosts)} hosts using nmap")
-    return hosts
+from core.utils.directory import create_scan_file
 
 
 async def main():
     config, config_file = get_config()
-    setup_logging()
-
+    console = Console()
+    console.clear()
     data, path = create_scan_file()
-    logging.info(f"Created scan file at '{path}'")
+    console.log(f"Created scan file at '" + path + "'")
 
-    tasks = []
-
+    console.status("Working...")
     # Enumerate devices on the network using nmap
     if config.getboolean("Scan Types", "ip_network"):
         ip = config.get("Network Interface", "ipv4")
         netmask = config.get("Network Interface", "netmask")
-        tasks.append(asyncio.create_task(scan_ip_network(ip, netmask)))
+        ip_range = f"{ip}/{subnet_to_cidr(netmask)}"
+
+        console.log("Initializing IP scanning...")
+        console.log(f"Performing host discovery and port scanning on IP range {ip_range}...")
+        data["hosts"]["ip_network"] = ip_scanning()
+        console.log(f"Discovered [cyan]{len(data['hosts']['ip_network'])}[/cyan] hosts using nmap")
 
     # Determine connectivity method (wired/Wi-Fi) for IP network devices through packet sniffing
     if config.getboolean("Scan Types", "wifi_sniffing"):
-        tasks.append(asyncio.create_task(wifi_sniffing()))
+        console.log("Initializing Wi-Fi sniffing...")
+        wifi_sniffing()
+        console.log("Finished Wi-Fi sniffing")
 
     # Discover and enumerate ble devices
     if config.getboolean("Scan Types", "ble"):
-        tasks.append(asyncio.create_task(bluetooth_enumeration()))
-
-    await asyncio.gather(*tasks)
+        console.log("Initializing Bluetooth LE enumeration...")
+        data["hosts"]["ble"] = asyncio.gather(bluetooth_enumeration())
+        console.log(f"Discovered [cyan]{len(data['hosts']['ble'])}[/cyan] Bluetooth LE devices")
 
     data["scan_end"] = str(datetime.datetime.now())
-    logging.info(f"Scan finished at {data['scan_end']}")
+    console.log(f"Scan finished at {data['scan_end']}")
+
+    # Create JSON file and insert data
+    with open(path, "w") as file:
+        json.dump(data, file, indent=4)
+
 
 

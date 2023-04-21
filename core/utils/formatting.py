@@ -1,5 +1,7 @@
 import os
 import time
+import json
+import re
 
 
 def format_bluetooth_details(raw_details):
@@ -76,6 +78,11 @@ def subnet_to_cidr(subnet_mask):
     Returns:
     int: CIDR notation (e.g. 24 for subnet mask "255.255.255.0")
     """
+    # Validate the input
+    parts = subnet_mask.split('.')
+    if len(parts) != 4 or not all(part.isdigit() and 0 <= int(part) <= 255 for part in parts):
+        raise ValueError("Invalid subnet mask")
+
     # Convert subnet mask to binary string
     binary_mask = ''.join([bin(int(x))[2:].zfill(8) for x in subnet_mask.split('.')])
 
@@ -90,80 +97,51 @@ def subnet_to_cidr(subnet_mask):
     return cidr
 
 
+
 def create_scan_file_path():
     # Create path and name for JSON file
-    slash = os.path.sep
-    timestr = time.strftime("%Y%m%d-%H%M%S")
-    path = os.getcwd().split(slash)
-    path.append("scans")
-    path.append("scan_" + timestr + ".json")
-    path = slash.join(path)
+    scans_dir = os.path.join(os.getcwd(), 'scans')
+    os.makedirs(scans_dir, exist_ok=True)
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    filename = f"scan_{timestamp}.json"
+    path = os.path.join(scans_dir, filename)
     return path
 
 
-def format_discovered_ip_hosts(scan_results):
-    output = {}
-    # Extract useful information from the scan
-    for host in scan_results:
-        if host in ["127.0.0.1"] or "mac" not in scan_results[host]["addresses"]:
+DEFAULT_LOCAL_IP = "127.0.0.1"
+
+
+def parse_scan_results(scan_results):
+    parsed_results = {}
+    for host, data in scan_results.items():
+        mac_address = data.get("macaddress")
+        if host == DEFAULT_LOCAL_IP or not mac_address:
             continue
-        output[host] = {
-            "addresses": scan_results[host]["addresses"],
-            "vendor": {},
-            "ports": {},
-            "os": {}
+        parsed_results[host] = {
+            "addresses": {
+                "mac": mac_address,
+                "ipv4": host
+            },
+            "vendor": data["macaddress"].get("vendor", {}),
+            "ports": data.get("ports", {}),
+            "os": data.get("osmatch", {})
         }
-        if "vendor" in scan_results["scan"][host] and scan_results["scan"][host]["vendor"]:
-            output[host]["vendor"] = scan_results["scan"][host]["vendor"][output[host]["addresses"]["mac"]]
-        if "tcp" in scan_results["scan"][host] and scan_results["scan"][host]["tcp"]:
-            output[host]["ports"] = scan_results["scan"][host]["tcp"]
-        if "osmatch" in scan_results["scan"][host] and scan_results["scan"][host]["osmatch"]:
-            output[host]["os"] = scan_results["scan"][host]["osmatch"]
-    return output
+    return parsed_results
 
 
 def format_vulns_scan(ports):
-    # Example output:
-    # {
-    #     22: [
-    #         {
-    #             "name": "CVE-2021-28041",
-    #             "score": "4.6",
-    #             "url": "https://vulners.com/cve/CVE-2021-28041",
-    #         },
-    #         {
-    #             "name": "CVE-2021-41617",
-    #             "score": "4.4",
-    #             "url": "https://vulners.com/cve/CVE-2021-41617",
-    #         }
-    #     ],
-    #     80: [
-    #         {
-    #             "name": "CVE-2022-22707",
-    #             "score": "4.3",
-    #             "url": "https://vulners.com/cve/CVE-2022-22707",
-    #         }
-    #     ],
-    # }
-
+    print(json.dumps(ports, indent=4, sort_keys=True))
     port_cves = {}
 
-    for port in ports:
-        if 'script' in ports[port] \
-                and 'vulners' in ports['tcp'][port]['script']:
-            formatted_cves = []
-            output = ports[port]['script']['vulners']
-            nl = "\n"
-            output = output.split(''.join(nl))
-            cves = output[2:]
-            tab = '\t'
-            for cve in cves:
-                cve_data = cve.split(''.join(tab))
-                formatted_cve = {
-                    'name': cve_data[1],
-                    'score': cve_data[2],
-                    'url': cve_data[3]
-                }
-                formatted_cves.append(formatted_cve)
+    for port, data in ports.items():
+        try:
+            vulners_script = data['script']['vulners']
+            cve_matches = re.findall(r'\t+(CVE-\d+-\d+)\t+(\d+\.\d+)\t+([^\t]+)', vulners_script)
+            formatted_cves = [{'name': cve[0], 'score': cve[1], 'url': f'https://vulners.com/cve/{cve[0]}'} for cve
+                              in cve_matches]
             port_cves[port] = formatted_cves
+        except KeyError:
+            pass
+
     return port_cves
+

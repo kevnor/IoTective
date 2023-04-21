@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-from core.protocols.ble.discovery import scan_devices
-from core.protocols.ble.device import get_device_services
 from core.utils.formatting import format_bluetooth_details
 from bleak import BleakScanner, BleakClient
 

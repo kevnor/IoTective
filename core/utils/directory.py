@@ -46,7 +46,7 @@ def create_scan_file():
         "vulnerabilities": {}
     }
 
-    with open(path, "w") as file:
-        json.dump(data, file, indent=4)
+    with open(path, "w", encoding="utf-8") as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
 
     return data, path

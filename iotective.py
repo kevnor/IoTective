@@ -1,40 +1,29 @@
 #!/bin/pyhton3
-import argparse
 from core.modules.configuration import configure
-from core.modules.main import main as scan
+from core.modules.scanning import get_scan_type, get_scan_mode, scan
+from core.utils.console import cli
+from core.utils.logger import Logger
+from core.utils.host import get_ip_range
+from rich.console import Console
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        prog="IoTective",
-        description="Internet of Things automated security scanning and penetration testing tool."
-    )
-
-    parser.add_argument(
-        "-c",
-        "--configure",
-        help="start configuration wizard",
-        required=False,
-        action="store_true"
-    )
-
-    parser.add_argument(
-        "--run",
-        required=False,
-        action="store_true",
-        help="run the scanner"
-    )
-
-    args = parser.parse_args()
+    console = Console(record=True)
+    args = cli()
+    log = Logger(console)
 
     if args.configure:
-        if args.run:
-            print("The scanner will run after configuration.")
         configure()
 
     if args.run:
-        scan()
+        target = get_ip_range()
+        scan_type = get_scan_type(args=args, log=log)
+        scan_mode = get_scan_mode(args=args, log=log)
+        hosts = scan(args, target, scan_type, scan_mode, console, log)
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        raise SystemExit("Ctrl+C pressed. Exiting.")

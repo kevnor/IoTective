@@ -1,4 +1,6 @@
 from __future__ import print_function
+
+import ctypes
 import socket
 import psutil
 import netifaces
@@ -7,6 +9,11 @@ import os
 import subprocess
 import pyrcrack
 from core.utils.console import print_error
+from core.utils.formatting import subnet_to_cidr
+from platform import system
+import sys
+import ipaddress
+from re import search
 
 
 def get_default_gateway():
@@ -86,8 +93,6 @@ def get_interface_name():
     return config.get("Network Interface", "name")
 
 
-
-
 async def get_wireless_interfaces():
     airmon = pyrcrack.AirmonNg()
     interfaces = await airmon.interfaces
@@ -100,7 +105,7 @@ async def get_wireless_interfaces():
 
 def get_wireless_mode(interface):
     # Run the iwconfig command and capture the output
-    completed_process = subprocess.run(['iwconfig',  interface], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    completed_process = subprocess.run(['iwconfig', interface], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Check if there was an error running the command
     if completed_process.returncode != 0:
@@ -139,3 +144,36 @@ def set_wireless_mode(new_mode="Monitor"):
         except subprocess.CalledProcessError as e:
             print_error(e)
             return False
+
+
+def is_root() -> bool:
+    if os.name == 'posix':
+        return os.getuid() == 0
+    elif os.name == 'nt':
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin() == 1
+        except:
+            return False
+    else:
+        print("Unknown OS, unable to determine root status")
+        sys.exit(1)
+
+
+def get_ip_address() -> str:
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.connect(("1.1.1.1", 80))
+        return sock.getsockname()[0]
+
+
+def get_ip_range() -> str:
+    ip = get_ip_address()
+    if system().lower() == "windows":
+        output = subprocess.run(["ipconfig"], capture_output=True).stdout.decode()
+        index = output.find(ip)
+        mask = output[index:].split("\n")[0].split(":")[-1].strip()
+        subnet = ipaddress.IPv4Network(f"{ip}/{mask}", strict=False)
+    else:
+        output = subprocess.run(["ip", "-o", "-f", "inet", "addr", "show"], capture_output=True).stdout.decode()
+        regex = f"\\b{ip}\/\\b([0-9]|[12][0-9]|3[0-2])\\b"
+        subnet = ipaddress.IPv4Network(search(regex, output).group(), strict=False)
+    return str(subnet)

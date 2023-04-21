@@ -28,10 +28,11 @@ async def get_wifi_ssid(interface):
     logging.basicConfig(level=logging.WARNING)
     int_face = None
 
-    async with pywifi.PyWiFi() as wifi:
-        for i in wifi.interfaces():
-            if i.name() == interface:
-                int_face = i
+    wifi = pywifi.PyWiFi()
+
+    for i in wifi.interfaces():
+        if i.name() == interface:
+            int_face = i
 
     if int_face:
         int_face.scan()
