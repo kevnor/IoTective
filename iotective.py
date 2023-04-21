@@ -1,25 +1,34 @@
 #!/bin/pyhton3
 from core.modules.configuration import configure
-from core.modules.scanning import get_scan_type, get_scan_mode, scan
+from core.modules.scanning import get_scan_type, scan_target
 from core.utils.console import cli
-from core.utils.logger import Logger
+from core.utils.logger import MyLogger
 from core.utils.host import get_ip_range
 from rich.console import Console
+from core.vendors.hue import discover_philips_hue_bridge
 
 
 def main():
-    console = Console(record=True)
+    logger = MyLogger(__name__)
+    console = Console()
+
     args = cli()
-    log = Logger(console)
 
     if args.configure:
         configure()
 
     if args.run:
-        target = get_ip_range()
-        scan_type = get_scan_type(args=args, log=log)
-        scan_mode = get_scan_mode(args=args, log=log)
-        hosts = scan(args, target, scan_type, scan_mode, console, log)
+        logger.info("Initializing IoTective scanner...")
+
+        # Perform nmap scans to discover hosts on the network and find open ports
+        target = get_ip_range(logger=logger)
+        scan_type = get_scan_type(args=args, logger=logger)
+        hosts = scan_target(args, target, scan_type, logger=logger, console=console)
+
+        # Identify Philips Hue bridges on the network
+        hue_bridges = discover_philips_hue_bridge(logger=logger, console=console)
+
+        # Capture packets to identify wireless hosts
 
 
 if __name__ == "__main__":

@@ -165,8 +165,10 @@ def get_ip_address() -> str:
         return sock.getsockname()[0]
 
 
-def get_ip_range() -> str:
+def get_ip_range(logger) -> str:
     ip = get_ip_address()
+    logger.info("Retrieving IP range...")
+
     if system().lower() == "windows":
         output = subprocess.run(["ipconfig"], capture_output=True).stdout.decode()
         index = output.find(ip)
@@ -176,4 +178,5 @@ def get_ip_range() -> str:
         output = subprocess.run(["ip", "-o", "-f", "inet", "addr", "show"], capture_output=True).stdout.decode()
         regex = f"\\b{ip}\/\\b([0-9]|[12][0-9]|3[0-2])\\b"
         subnet = ipaddress.IPv4Network(search(regex, output).group(), strict=False)
+    logger.info(f"Using {str(subnet)} as target IP range")
     return str(subnet)

@@ -1,48 +1,11 @@
 #!/bin/pyhton3
-from core.vendors.hue import discover_philips_hue_bridge
-from core.actions.nmap_host_enum import nmap_enumeration, arp_scan, ping_scan, port_scan
+from core.actions.nmap_host_enum import arp_scan, ping_scan, port_scan
 from core.utils.host import is_root
-import logging
-from rich.logging import RichHandler
-from rich.console import Console
 from enum import Enum
 from core.utils.models import Port, Host
-from typing import List, Tuple, Dict, Any
-
-# Main function for performing discovery/scanning/enumeration
-def ip_scanning():
-    FORMAT = "%(message)s"
-    logging.basicConfig(
-        level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
-    )
-
-    log = logging.getLogger("rich")
-
-    # Discover and enumerate hosts on local IP network
-    ip_network = nmap_enumeration()
-    console = Console()
-
-    console.status("Performing CPE lookup to discover CVEs...")
-    # CPE lookup for corresponding CVEs
-    # for host in ip_network:
-    #     console.status(f"Scanning {host}...")
-    #     ports = nmap_cpe_scan(host)
-    #     for port in ports:
-    #         ip_network[host]["ports"][port]["vulns"] = ports[port]
-
-    console.status("Scanning for Philips Hue bridge")
-    # Discover Philips Hue bridge
-    discovered_bridges = discover_philips_hue_bridge()
-    if len(discovered_bridges) > 0:
-        console.status(f"{len(discovered_bridges)} Philips Hue bridge(s) [green]discovered[/green]")
-    else:
-        console.status(f"Philips Hue bridge [red]not discovered[/green]")
-    for bridge in discovered_bridges:
-        if bridge in ip_network:
-            ip_network[bridge]["bridge"] = vars(discovered_bridges[bridge])
-        else:
-            ip_network[discovered_bridges[bridge]["ip"]] = {"bridge": vars(discovered_bridges[bridge])}
-    return ip_network
+from typing import List, Dict, Any
+from rich.table import Table
+from rich import box
 
 
 class ScanType(Enum):
@@ -56,11 +19,11 @@ class ScanMode(Enum):
     Evade = 2
 
 
-def get_scan_type(args: Any, log: Any) -> ScanType:
+def get_scan_type(args: Any, logger: Any) -> ScanType:
     scan_type = ScanType.Ping
     if args.scan_type == "arp":
         if not is_root():
-            log.logger("warning", "You need to be root in order to run arp scan.")
+            logger.warning("You need to be root in order to run arp scan.")
         else:
             scan_type = ScanType.ARP
     elif not args.scan_type:
@@ -69,135 +32,116 @@ def get_scan_type(args: Any, log: Any) -> ScanType:
     return scan_type
 
 
-def get_scan_mode(args: Any, log: Any) -> ScanMode:
-    scan_mode = ScanMode.Normal
-    if args.mode == "evade":
-        if is_root():
-            log.logger("info", "Evasion mode enabled!")
-            scan_mode = ScanMode.Evade
-        else:
-            log.logger(
-                "error",
-                "You must be root to use evasion mode!"
-                + " Using normal mode ...",
-            )
-    elif args.mode == "noise":
-        log.logger("info", "Noise mode enabled!")
-        scan_mode = ScanMode.Noise
-    return scan_mode
+def scan_target(args: Any, target: str, scan_type: ScanType, console: Any, logger: Any) -> List[Host]:
+    """Perform a scan on the specified target.
 
+    Args:
+        args (Any): Arguments for the scan.
+        target (str): The IP address or CIDR range to scan.
+        scan_type (ScanType): The type of scan to perform.
+        console (Any): The console object to use for displaying the results.
+        logger (Any): The logger object to use for logging.
 
-def scan(args: Any, target: str, scan_type: ScanType, scan_mode: ScanMode, console: Any, log: Any) -> List[Host]:
-    live_hosts = discover_hosts(target, console, scan_type)
+    Returns:
+        List[Host]: A list of Host objects representing each scanned host.
+    """
+    # Discover live hosts
+    live_hosts = discover_hosts(target=target, logger=logger, scan_type=scan_type)
     analysed_hosts = []
 
+    # Perform a port scan on each live host and analyse the results
     for host in live_hosts:
         try:
-            port_scan_result = port_scan(target=host, log=log)
-            analysed_hosts.append(analyse_host(host, port_scan_result, console, log))
+            port_scan_result = port_scan(target=host["ipv4"], logger=logger)
+            analysed_hosts.append(analyse_host(host=host, scan_result=port_scan_result, console=console, logger=logger))
         except Exception as e:
-            log.logger("error", f"Port scan for host {host} failed: {str(e)}")
+            logger.error(f"Port scan for host {host} failed: {str(e)}")
             continue
     return analysed_hosts
 
 
-def discover_hosts(target: str, console: Any, scan_type: ScanType = ScanType.ARP) -> List[str]:
+def discover_hosts(target: str, logger: Any, scan_type: ScanType = ScanType.ARP) -> List[Dict[str, str]]:
+    """Discover live hosts on the specified target.
+
+    Args:
+        target (str): The IP address or CIDR range to scan.
+        logger (Any): The logger object to use for logging.
+        scan_type (ScanType, optional): The type of scan to perform. Defaults to ScanType.ARP.
+
+    Returns:
+        List[Dict[str, str]]: A list of live hosts, each represented as a dictionary with keys
+        'ipv4', 'mac', and 'vendor'.
+    """
     if scan_type == ScanType.ARP:
-        live_hosts = arp_scan(target)
+        live_hosts = arp_scan(target=target, logger=logger)
     else:
-        live_hosts = ping_scan(target)
+        live_hosts = ping_scan(target=target, logger=logger)
     return live_hosts
 
 
-def init_host(host_ip: str, host_key: Dict[str, Any]) -> Host:
-    try:
-        ip = host_ip
-    except (KeyError, IndexError):
-        ip = "Unknown"
+def init_host(host: dict, host_key: Dict[str, Any]) -> Host:
+    ip = host["ipv4"]
+    mac = host.get("mac", "Unknown")
+    vendor = host.get("vendor", "Unknown")
+    if vendor == "Unknown":
+        vendor = host_key.get(ip, {}).get("macaddress", {}).get("vendor", "Unknown")
 
-    try:
-        mac = host_key[host_ip]["macaddress"]["addr"]
-    except (KeyError, IndexError):
-        mac = "Unknown"
-
-    try:
-        vendor = host_key[host_ip]["macaddress"]["vendor"]
-    except (KeyError, IndexError):
-        vendor = "Unknown"
-
-    try:
-        os = host_key[host_ip]["osmatch"][0]["name"]
-    except (KeyError, IndexError):
-        os = "Unknown"
-
-    try:
-        os_accuracy = host_key[host_ip]["osmatch"][0]["accuracy"]
-    except (KeyError, IndexError):
-        os_accuracy = "Unknown"
-
-    try:
-        os_type = host_key[host_ip]["osmatch"][0]["osclass"][0]["type"]
-    except (KeyError, IndexError):
+    os = host_key.get(ip, {}).get("osmatch", [{}])[0].get("name", "Unknown")
+    os_accuracy = host_key.get(ip, {}).get("osmatch", [{}])[0].get("accuracy", "Unknown")
+    if ip in host_key:
+        os_type = host_key.get(ip, {}).get("osmatch", [{}])[0].get("osclass", [{}]).get("type", "Unknown")
+    else:
         os_type = "Unknown"
 
-    return Host(
-        ip=ip,
-        mac=mac,
-        vendor=vendor,
-        os=os,
-        os_accuracy=os_accuracy,
-        os_type=os_type,
-    )
+    return Host(ip=ip, mac=mac, vendor=vendor, os=os, os_accuracy=os_accuracy, os_type=os_type)
 
 
-def init_port(port) -> Port:
-    try:
-        protocol = port["protocol"]
-    except (KeyError, IndexError):
-        protocol = "Unknown"
-
-    try:
-        port_id = port["portid"]
-    except (KeyError, IndexError):
-        port_id = "Unknown"
-
-    try:
-        service_name = port["service"]["name"]
-    except (KeyError, IndexError):
-        service_name = "Unknown"
-
-    try:
-        product = port["service"]["product"]
-    except (KeyError, IndexError):
-        product = "Unknown"
-
-    try:
-        version = port["service"]["version"]
-    except (KeyError, IndexError):
-        version = "Unknown"
-
-    try:
-        cpe = []
-        for c in port["cpe"]:
-            cpe.append(c["cpe"])
-    except (KeyError, IndexError):
-        cpe = "Unknown"
-
+def init_port(port: dict) -> Port:
+    protocol = port.get("protocol", "Unknown")
+    port_id = port.get("portid", "Unknown")
+    service_name = port.get("service", {}).get("name", "Unknown")
+    product = port.get("service", {}).get("product", "Unknown")
+    version = port.get("service", {}).get("version", "Unknown")
+    cpe = [c.get("cpe", "Unknown") for c in port.get("cpe", [])]
+    cves = []
+    for script in port.get("scripts", {}):
+        if script["name"] == "vulners":
+            for cpe in script["data"]:
+                for child in script["data"][cpe]["children"]:
+                    cve = child
+                    cve["cpe"] = cpe
+                    cves.append(cve)
     return Port(
         protocol=protocol,
         port_id=port_id,
         service_name=service_name,
         product=product,
         version=version,
-        cpe=cpe
+        cpe=cpe,
+        cves=cves,
     )
 
 
-def analyse_host(host_ip, scan_result, log, console) -> Host:
-    host = init_host(host_ip, scan_result)
+def analyse_host(host: dict, scan_result, logger, console) -> Host:
+    host = init_host(host, scan_result)
+    console.print(host.colored(), justify="center")
 
-    for port in scan_result[host.ip]["ports"]:
-        port_info = init_port(port)
-        host.add_port(port_info)
+    if host.ip in scan_result:
+        table = Table(box=box.MINIMAL)
 
+        table.add_column("Port", style="cyan")
+        table.add_column("Service", style="blue")
+        table.add_column("Product", style="red")
+        table.add_column("Version", style="purple")
+        table.add_column("CVEs", style="red")
+
+        for port in scan_result[host.ip]["ports"]:
+            port_info = init_port(port)
+            table.add_row(
+                port_info.port_id,
+                port_info.service_name,
+                port_info.product,
+                port_info.version,
+                str(len(port_info.cves)))
+        console.print(table)
     return host

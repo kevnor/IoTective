@@ -1,7 +1,4 @@
-from core.actions.nmap_host_enum import arp_scan, ping_scan, port_scan
 from core.utils.directory import get_config
-from core.utils.formatting import subnet_to_cidr
-from core.modules.scanning import ip_scanning, ScanType
 import json
 import datetime
 import asyncio
@@ -22,16 +19,6 @@ async def main():
 
     console.status("Working...")
     # Enumerate devices on the network using nmap
-    if config.getboolean("Scan Types", "ip_network"):
-        ip = config.get("Network Interface", "ipv4")
-        netmask = config.get("Network Interface", "netmask")
-        ip_range = f"{ip}/{subnet_to_cidr(netmask)}"
-
-        console.log("Initializing IP scanning...")
-        console.log(f"Performing host discovery and port scanning on IP range {ip_range}...")
-        data["hosts"]["ip_network"] = ip_scanning()
-        console.log(f"Discovered [cyan]{len(data['hosts']['ip_network'])}[/cyan] hosts using nmap")
-
     # Determine connectivity method (wired/Wi-Fi) for IP network devices through packet sniffing
     if config.getboolean("Scan Types", "wifi_sniffing"):
         console.log("Initializing Wi-Fi sniffing...")

@@ -3,6 +3,7 @@ netifaces~=0.11.0
 prettytable==3.7.0
 pyserial~=3.5
 python-nmap~=0.7.1
+python3-nmap
 pyyaml~=6.0
 bleak==0.20.1
 requests~=2.28.2
