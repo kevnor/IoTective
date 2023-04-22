@@ -14,6 +14,9 @@ from platform import system
 import sys
 import ipaddress
 from re import search
+from pyroute2 import IW
+from pyroute2 import IPRoute
+from pyroute2.netlink import NetlinkError
 
 
 def get_default_gateway():
@@ -93,17 +96,68 @@ def get_interface_name():
     return config.get("Network Interface", "name")
 
 
-async def get_wireless_interfaces():
+def is_wireless_interface(iface: str) -> bool:
+    ip = IPRoute()
+    iw = IW()
+    index = ip.link_lookup(ifname=iface)[0]
+    try:
+        iw.get_interface_by_ifindex(index)
+        iw.close()
+        ip.close()
+        return True
+    except NetlinkError as e:
+        if e.code == 19:  # 19 'No such device'
+            iw.close()
+            ip.close()
+            return False
+
+
+def get_interface_for_ip_range(ip_range: str):
+    subnet_mask = None
+    for interface in netifaces.interfaces():
+        addrs = netifaces.ifaddresses(interface)
+        if socket.AF_INET in addrs:
+            for addr in addrs[socket.AF_INET]:
+                if 'netmask' in addr and 'addr' in addr:
+                    subnet_mask = addr.get('netmask')
+                    break
+            if subnet_mask:
+                break
+    if subnet_mask:
+        subnet_cidr = subnet_to_cidr(subnet_mask)
+        network_address = ipaddress.IPv4Network(ip_range, False).supernet(new_prefix=int(subnet_cidr))
+        for interface in netifaces.interfaces():
+            addrs = netifaces.ifaddresses(interface)
+            if socket.AF_INET in addrs:
+                for addr in addrs[socket.AF_INET]:
+                    if 'addr' in addr and ipaddress.IPv4Address(addr.get('addr')) in network_address:
+                        return interface
+    return None
+
+
+def get_wifi_network_name(interface: str):
+    try:
+        output = subprocess.check_output(['iwconfig', interface])
+        output = output.decode('utf-8')
+        for line in output.split('\n'):
+            if 'ESSID:' in line:
+                return line.split('"')[1]
+    except subprocess.CalledProcessError:
+        pass
+    return None
+
+
+async def get_wireless_interfaces() -> list:
     airmon = pyrcrack.AirmonNg()
     interfaces = await airmon.interfaces
-    interfaces_dict = []
+    interfaces_list = []
     for interface in interfaces:
         int_dict = interface.asdict()
-        interfaces_dict.append(int_dict)
-    return interfaces_dict
+        interfaces_list.append(int_dict)
+    return interfaces_list
 
 
-def get_wireless_mode(interface):
+def get_wireless_mode(interface: str):
     # Run the iwconfig command and capture the output
     completed_process = subprocess.run(['iwconfig', interface], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -126,20 +180,19 @@ def get_wireless_mode(interface):
         return None
 
 
-def set_wireless_mode(new_mode="Monitor"):
-    interface = get_interface_name()
+def set_wireless_mode(interface: str, new_mode: str = "Monitor") -> bool:
     current_mode = get_wireless_mode(interface)
 
     if current_mode == new_mode:
         return True
     else:
         try:
-            subprocess.check_call(["sudo", "ifconfig", interface, "down"])
-            subprocess.check_call(["sudo", "iwconfig", interface, "mode", "monitor"])
-            subprocess.check_call(["sudo", "ifconfig", interface, "up"])
-
-            subprocess.check_call(["sudo", "iw", "dev", interface, "set", "type", new_mode])
-            print(f"Wireless mode set to {new_mode}")
+            if new_mode == "Monitor":
+                check = subprocess.check_call(["sudo airmon-ng check kill"], shell=True)
+                start = subprocess.check_call(["sudo airmon-ng start " + interface], shell=True)
+            else:
+                stop = subprocess.check_call(["sudo airmon-ng stop " + interface], shell=True)
+                start_network = subprocess.check_call(["sudo systemctl start NetworkManager"], shell=True)
             return True
         except subprocess.CalledProcessError as e:
             print_error(e)

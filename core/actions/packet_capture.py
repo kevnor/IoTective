@@ -1,7 +1,7 @@
 from scapy.sendrecv import sniff, wrpcap
 from core.utils.host import get_wireless_mode, set_wireless_mode
 from core.utils.directory import get_config
-
+from pyrcrack import AirodumpNg, AirmonNg
 import asyncio
 import pywifi
 import logging
@@ -22,6 +22,20 @@ def wifi_sniffing():
             wrpcap("test.pcap", capture)
         finally:
             set_wireless_mode(new_mode="Managed")
+
+
+async def get_wifi_channels_for_essid(essid: str, interface: str) -> list[int]:
+    try:
+        airodump = AirodumpNg()
+        airmon = AirmonNg()
+        async with airmon(interface) as mon:
+            async with airodump as pdump:
+                async for result in pdump(mon.monitor_interface):
+                    print(result)
+                    await asyncio.sleep(2)
+        return []
+    except:
+        return []
 
 
 async def get_wifi_ssid(interface):

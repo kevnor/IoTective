@@ -1,23 +1,28 @@
 import asyncio
-import os
+
 import pyrcrack
-from configparser import ConfigParser
+
+from rich.console import Console
+from rich.prompt import Prompt
 
 
-async def capture_packets():
-    config_file = os.path.join(os.path.dirname(__file__), "../../config.ini")
-    config = ConfigParser()
-    config.read(config_file)
-
-    interface = config.get("Network Interface", "name")
-
+async def scan_for_targets():
+    """Scan for targets, return json."""
+    console = Console()
+    console.clear()
     airmon = pyrcrack.AirmonNg()
 
+    interfaces = await airmon.interfaces
+    interface = Prompt.ask(
+        'Select an interface',
+        choices=[a.asdict()["interface"] for a in interfaces])
+
     async with airmon(interface) as mon:
-        async with pyrcrack.AirmonNg() as pdump:
-            async for aps in pdump(mon.monitor_interface):
-                print(aps)
-                break
+        async with pyrcrack.AirodumpNg() as pdump:
+            async for result in pdump(mon.monitor_interface):
+                console.clear()
+                console.print(result.table)
+                await asyncio.sleep(2)
 
 
-asyncio.run(capture_packets())
+asyncio.run(scan_for_targets())

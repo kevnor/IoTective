@@ -68,7 +68,7 @@ def format_bluetooth_details(raw_details):
     return dict_
 
 
-def subnet_to_cidr(subnet_mask):
+def subnet_to_cidr(subnet_mask: str) -> str:
     """
     Converts a subnet mask to CIDR notation.
 

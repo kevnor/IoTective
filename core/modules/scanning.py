@@ -2,10 +2,10 @@
 from core.actions.nmap_host_enum import arp_scan, ping_scan, port_scan
 from core.utils.host import is_root
 from enum import Enum
-from core.utils.models import Port, Host
+from core.utils.models import Host, init_port, init_host
 from typing import List, Dict, Any
-from rich.table import Table
-from rich import box
+
+from core.utils.console import make_header, make_host_scan_layout, make_host_info, make_port_info
 
 
 class ScanType(Enum):
@@ -79,69 +79,16 @@ def discover_hosts(target: str, logger: Any, scan_type: ScanType = ScanType.ARP)
     return live_hosts
 
 
-def init_host(host: dict, host_key: Dict[str, Any]) -> Host:
-    ip = host["ipv4"]
-    mac = host.get("mac", "Unknown")
-    vendor = host.get("vendor", "Unknown")
-    if vendor == "Unknown":
-        vendor = host_key.get(ip, {}).get("macaddress", {}).get("vendor", "Unknown")
-
-    os = host_key.get(ip, {}).get("osmatch", [{}])[0].get("name", "Unknown")
-    os_accuracy = host_key.get(ip, {}).get("osmatch", [{}])[0].get("accuracy", "Unknown")
-    if ip in host_key:
-        os_type = host_key.get(ip, {}).get("osmatch", [{}])[0].get("osclass", [{}]).get("type", "Unknown")
-    else:
-        os_type = "Unknown"
-
-    return Host(ip=ip, mac=mac, vendor=vendor, os=os, os_accuracy=os_accuracy, os_type=os_type)
-
-
-def init_port(port: dict) -> Port:
-    protocol = port.get("protocol", "Unknown")
-    port_id = port.get("portid", "Unknown")
-    service_name = port.get("service", {}).get("name", "Unknown")
-    product = port.get("service", {}).get("product", "Unknown")
-    version = port.get("service", {}).get("version", "Unknown")
-    cpe = [c.get("cpe", "Unknown") for c in port.get("cpe", [])]
-    cves = []
-    for script in port.get("scripts", {}):
-        if script["name"] == "vulners":
-            for cpe in script["data"]:
-                for child in script["data"][cpe]["children"]:
-                    cve = child
-                    cve["cpe"] = cpe
-                    cves.append(cve)
-    return Port(
-        protocol=protocol,
-        port_id=port_id,
-        service_name=service_name,
-        product=product,
-        version=version,
-        cpe=cpe,
-        cves=cves,
-    )
-
-
 def analyse_host(host: dict, scan_result, logger, console) -> Host:
     host = init_host(host, scan_result)
-    console.print(host.colored(), justify="center")
 
     if host.ip in scan_result:
-        table = Table(box=box.MINIMAL)
+        ports = [init_port(port) for port in scan_result[host.ip]["ports"]]
+        layout = make_host_scan_layout(port_size=len(ports))
 
-        table.add_column("Port", style="cyan")
-        table.add_column("Service", style="blue")
-        table.add_column("Product", style="red")
-        table.add_column("Version", style="purple")
-        table.add_column("CVEs", style="red")
+        layout["header"].update(make_header(host_ip=host.ip))
+        layout["info"].update(make_host_info(host=host))
+        layout["ports"].update(make_port_info(ports=ports))
 
-        for port in scan_result[host.ip]["ports"]:
-            port_info = init_port(port)
-            table.add_row(
-                port_info.port_id,
-                port_info.service_name,
-                port_info.product,
-                port_info.version,
-                str(len(port_info.cves)))
-        console.print(table)
+        console.print(layout)
     return host

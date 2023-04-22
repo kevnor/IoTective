@@ -2,6 +2,7 @@ import requests
 from rich.table import Table
 from rich.console import Console
 from dataclasses import dataclass
+from typing import Dict, Any
 
 
 @dataclass()
@@ -139,3 +140,46 @@ class Port:
         if self.cves is None:
             self.cves = []
         self.cves.append(cve)
+
+
+def init_host(host: dict, host_key: Dict[str, Any]) -> Host:
+    ip = host["ipv4"]
+    mac = host.get("mac", "Unknown")
+    vendor = host.get("vendor", "Unknown")
+    if vendor == "Unknown":
+        vendor = host_key.get(ip, {}).get("macaddress", {}).get("vendor", "Unknown")
+
+    os = host_key.get(ip, {}).get("osmatch", [{}])[0].get("name", "Unknown")
+    os_accuracy = host_key.get(ip, {}).get("osmatch", [{}])[0].get("accuracy", "Unknown")
+    if ip in host_key:
+        os_type = host_key.get(ip, {}).get("osmatch", [{}])[0].get("osclass", [{}]).get("type", "Unknown")
+    else:
+        os_type = "Unknown"
+
+    return Host(ip=ip, mac=mac, vendor=vendor, os=os, os_accuracy=os_accuracy, os_type=os_type)
+
+
+def init_port(port: dict) -> Port:
+    protocol = port.get("protocol", "Unknown")
+    port_id = port.get("portid", "Unknown")
+    service_name = port.get("service", {}).get("name", "Unknown")
+    product = port.get("service", {}).get("product", "Unknown")
+    version = port.get("service", {}).get("version", "Unknown")
+    cpe = [c.get("cpe", "Unknown") for c in port.get("cpe", [])]
+    cves = []
+    for script in port.get("scripts", {}):
+        if script["name"] == "vulners":
+            for cpe in script["data"]:
+                for child in script["data"][cpe]["children"]:
+                    cve = child
+                    cve["cpe"] = cpe
+                    cves.append(cve)
+    return Port(
+        protocol=protocol,
+        port_id=port_id,
+        service_name=service_name,
+        product=product,
+        version=version,
+        cpe=cpe,
+        cves=cves,
+    )

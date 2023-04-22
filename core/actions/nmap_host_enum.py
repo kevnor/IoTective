@@ -113,7 +113,7 @@ def port_scan(target: str, logger) -> List:
         if is_root():
             logger.info(f"Scanning {target} for ports and known vulnerabilities ...")
             nmp = Nmap()
-            arguments = "--open -T4 -O --top-ports 10000 --script vulners"
+            arguments = "--open -T4 -O --top-ports 100 --script vulners"
             results = nmp.nmap_version_detection(target=target, args=arguments)
 
             return results
