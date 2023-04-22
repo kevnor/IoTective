@@ -1,10 +1,11 @@
-from scapy.sendrecv import sniff, wrpcap
+from scapy.layers.dot11 import Dot11
+from scapy.sendrecv import wrpcap
 from core.utils.host import get_wireless_mode, set_wireless_mode
 from core.utils.directory import get_config
-from pyrcrack import AirodumpNg, AirmonNg
 import asyncio
 import pywifi
 import logging
+from scapy.all import sniff, Packet
 
 WIRELESS_MODE_MONITOR = "Monitoring"
 
@@ -22,20 +23,6 @@ def wifi_sniffing():
             wrpcap("test.pcap", capture)
         finally:
             set_wireless_mode(new_mode="Managed")
-
-
-async def get_wifi_channels_for_essid(essid: str, interface: str) -> list[int]:
-    try:
-        airodump = AirodumpNg()
-        airmon = AirmonNg()
-        async with airmon(interface) as mon:
-            async with airodump as pdump:
-                async for result in pdump(mon.monitor_interface):
-                    print(result)
-                    await asyncio.sleep(2)
-        return []
-    except:
-        return []
 
 
 async def get_wifi_ssid(interface):
@@ -57,3 +44,27 @@ async def get_wifi_ssid(interface):
         return [{'ssid': profile.ssid, 'bssid': profile.bssid} for profile in profiles]
     else:
         return None
+
+
+def packet_callback(pkt: Packet, bssids: list, essid_to_find: str, logger):
+    if pkt.haslayer(Dot11):
+        if pkt.type == 0 and pkt.subtype == 8:
+            # This is a Beacon frame
+            bssid = pkt.addr3
+            essid = pkt.info.decode('utf-8')
+            if essid == essid_to_find and bssid not in bssids:
+                bssids.append(bssid)
+                logger.info(f"Discovered BSSID: '{bssid}'")
+
+
+def get_bssid_for_essid(essid: str, logger, interface: str) -> list[str]:
+    bssids = []
+    logger.info(f"Discovering BSSID for APs using ESSID: '{essid}'")
+    logger.info("Searching for 20 seconds...")
+    sniff(
+        iface=interface,
+        monitor=True,
+        prn=lambda pkt: packet_callback(pkt=pkt, bssids=bssids, essid_to_find=essid, logger=logger),
+        timeout=20
+    )
+    return bssids

@@ -1,28 +1,27 @@
-import asyncio
-
-import pyrcrack
-
-from rich.console import Console
-from rich.prompt import Prompt
+from scapy.all import *
+from scapy.layers.dot11 import Dot11
 
 
-async def scan_for_targets():
-    """Scan for targets, return json."""
-    console = Console()
-    console.clear()
-    airmon = pyrcrack.AirmonNg()
-
-    interfaces = await airmon.interfaces
-    interface = Prompt.ask(
-        'Select an interface',
-        choices=[a.asdict()["interface"] for a in interfaces])
-
-    async with airmon(interface) as mon:
-        async with pyrcrack.AirodumpNg() as pdump:
-            async for result in pdump(mon.monitor_interface):
-                console.clear()
-                console.print(result.table)
-                await asyncio.sleep(2)
+def packet_callback(pkt: Packet, bssids: list, essid_to_find: str):
+    if pkt.haslayer(Dot11):
+        if pkt.type == 0 and pkt.subtype == 8:
+            # This is a Beacon frame
+            bssid = pkt.addr3
+            essid = pkt.info.decode('utf-8')
+            if essid == essid_to_find and bssid not in bssids:
+                bssids.append(bssid)
 
 
-asyncio.run(scan_for_targets())
+def get_bssid_for_essid(essid: str) -> list[str]:
+    bssids = []
+    sniff(
+        iface="wlan0",
+        monitor=True,
+        prn=lambda pkt: packet_callback(pkt=pkt, bssids=bssids, essid_to_find=essid),
+        timeout=20
+    )
+    return bssids
+
+
+print(get_bssid_for_essid(essid="Girls Gone Wireless"))
+
