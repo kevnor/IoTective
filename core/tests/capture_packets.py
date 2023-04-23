@@ -1,27 +1,29 @@
-from scapy.all import *
+from scapy.all import sniff, Packet
 from scapy.layers.dot11 import Dot11
 
 
-def packet_callback(pkt: Packet, bssids: list, essid_to_find: str):
+def packet_handler(pkt: Packet, hosts: list[str], bssid: str):
+    print("----")
+    print("Dest MAC: " + str(pkt.addr1))
+    print("Client MAC: " + str(pkt.addr2))
+    print("AP MAC: " + str(pkt.addr3))
+    # Check if the packet contains the BSSID field
     if pkt.haslayer(Dot11):
-        if pkt.type == 0 and pkt.subtype == 8:
-            # This is a Beacon frame
-            bssid = pkt.addr3
-            essid = pkt.info.decode('utf-8')
-            if essid == essid_to_find and bssid not in bssids:
-                bssids.append(bssid)
+        if pkt.addr2 == bssid:
+            print("YEssss")
 
 
-def get_bssid_for_essid(essid: str) -> list[str]:
-    bssids = []
+def get_hosts_on_bssid(bssid: str, interface: str) -> list[str]:
+    hosts = []
     sniff(
-        iface="wlan0",
-        monitor=True,
-        prn=lambda pkt: packet_callback(pkt=pkt, bssids=bssids, essid_to_find=essid),
-        timeout=20
+        iface=interface,
+        prn=lambda pkt: packet_handler(pkt=pkt, bssid=bssid, hosts=hosts),
+        timeout=10,
+        monitor=True
     )
-    return bssids
+
+    return hosts
 
 
-print(get_bssid_for_essid(essid="Girls Gone Wireless"))
+print(get_hosts_on_bssid(interface="wlan0", bssid="00:31:92:AC:04:C2"))
 

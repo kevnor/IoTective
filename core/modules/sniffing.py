@@ -1,5 +1,5 @@
 from core.utils.host import get_interface_for_ip_range, is_wireless_interface, get_wifi_network_name, set_wireless_mode
-from core.actions.packet_capture import get_bssid_for_essid
+from core.actions.packet_capture import get_bssid_for_essid, get_hosts_on_bssid
 
 
 async def sniff_wifi(ip_range: str, logger, console):
@@ -20,7 +20,13 @@ async def sniff_wifi(ip_range: str, logger, console):
                     # Could be multiple BSSIDs since some APs use both 2.4GHz and 5GHz bands with the same ESSID
                     ap_bssids = get_bssid_for_essid(essid=wifi_name, logger=logger, interface=interface)
 
-                clean_up_interface = set_wireless_mode(interface=interface, new_mode="Managed")
+                    if len(ap_bssids) > 0:
+                        hosts = {}
+                        for bid in ap_bssids:
+                            hosts[bid] = get_hosts_on_bssid(bssid=bid, logger=logger, interface=interface)
+                        print(hosts)
+
+                    clean_up_interface = set_wireless_mode(interface=interface, new_mode="Managed")
 
     except Exception as e:
         print(f"An error occurred: {e}")

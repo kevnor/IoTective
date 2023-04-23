@@ -313,3 +313,31 @@ def make_port_info(ports: list[Port]) -> Panel:
     )
 
     return port_panel
+
+
+def make_scan_layout() -> Layout:
+    layout = Layout(name="scan")
+
+    top_banner = Panel("IoTective", style="bold white on blue")
+    layout.split_row(top_banner)
+
+    main_area = Layout()
+    layout.split_row(main_area)
+
+    console_output = Panel("Console Output", title="Output")
+    main_area.split_column(console_output)
+
+    right_section = Layout()
+    main_area.split_column(right_section)
+
+    summary_table = Table(title="Summary")
+    summary_table.add_column("Network", justify="center")
+    summary_table.add_column("Devices Found", justify="center")
+    summary_table.add_row("My Network", "10")
+    right_section.split_row(summary_table)
+
+    # Add the latest discovered host information to the lower section of the right section
+    host_info = Panel("Latest Host Info", title="Host Info")
+    right_section.split_row(host_info)
+
+    return layout

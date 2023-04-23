@@ -6,7 +6,6 @@ from rich.console import Console
 
 # Functions:
 from core.actions.ble_enumeration import bluetooth_enumeration
-from core.actions.packet_capture import wifi_sniffing
 from core.utils.directory import create_scan_file
 
 
@@ -22,7 +21,7 @@ async def main():
     # Determine connectivity method (wired/Wi-Fi) for IP network devices through packet sniffing
     if config.getboolean("Scan Types", "wifi_sniffing"):
         console.log("Initializing Wi-Fi sniffing...")
-        wifi_sniffing()
+        #wifi_sniffing()
         console.log("Finished Wi-Fi sniffing")
 
     # Discover and enumerate ble devices

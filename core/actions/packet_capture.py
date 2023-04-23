@@ -10,21 +10,6 @@ from scapy.all import sniff, Packet
 WIRELESS_MODE_MONITOR = "Monitoring"
 
 
-def wifi_sniffing():
-    config, config_file = get_config()
-
-    nic_name = config.get("Network Interface", "name")
-    wireless_mode = get_wireless_mode(interface=nic_name)
-
-    # Set adapter to monitor mode
-    if wireless_mode != WIRELESS_MODE_MONITOR:
-        try:
-            capture = sniff(iface=nic_name, count=50)
-            wrpcap("test.pcap", capture)
-        finally:
-            set_wireless_mode(new_mode="Managed")
-
-
 async def get_wifi_ssid(interface):
     logging.basicConfig(level=logging.WARNING)
     int_face = None
@@ -57,6 +42,9 @@ def packet_callback(pkt: Packet, bssids: list, essid_to_find: str, logger):
                 logger.info(f"Discovered BSSID: '{bssid}'")
 
 
+
+
+
 def get_bssid_for_essid(essid: str, logger, interface: str) -> list[str]:
     bssids = []
     logger.info(f"Discovering BSSID for APs using ESSID: '{essid}'")
@@ -68,3 +56,27 @@ def get_bssid_for_essid(essid: str, logger, interface: str) -> list[str]:
         timeout=20
     )
     return bssids
+
+
+def packet_handler(pkt: Packet, hosts: list[str]):
+    # Check if the packet contains a Wi-Fi layer
+    if pkt.haslayer(Dot11):
+        # Check if the packet is a data packet and contains the BSSID field
+        if pkt.type == 2 and pkt.addr3:
+            # Get the BSSID of the access point
+            bssid = pkt.addr3
+            # Get the source MAC address of the data packet
+            src = pkt.addr2
+            # Display the information
+            hosts.append(pkt.addr2)
+            print(f"Host {src} is connected to {bssid}")
+
+
+def get_hosts_on_bssid(bssid: str, logger, interface: str) -> list[str]:
+    hosts = []
+    sniff(
+        iface="wlan0",
+        prn=packet_handler,
+        lfilter=lambda pkt: pkt.haslayer(Dot11) and pkt.addr3 == bssid)
+
+    return hosts
