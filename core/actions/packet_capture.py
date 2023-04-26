@@ -1,7 +1,4 @@
 from scapy.layers.dot11 import Dot11
-from scapy.sendrecv import wrpcap
-from core.utils.host import get_wireless_mode, set_wireless_mode
-from core.utils.directory import get_config
 import asyncio
 import pywifi
 import logging
@@ -10,7 +7,7 @@ from scapy.all import sniff, Packet
 WIRELESS_MODE_MONITOR = "Monitoring"
 
 
-async def get_wifi_ssid(interface):
+async def get_wifi_ssid(interface: str):
     logging.basicConfig(level=logging.WARNING)
     int_face = None
 
@@ -40,9 +37,6 @@ def packet_callback(pkt: Packet, bssids: list, essid_to_find: str, logger):
             if essid == essid_to_find and bssid not in bssids:
                 bssids.append(bssid)
                 logger.info(f"Discovered BSSID: '{bssid}'")
-
-
-
 
 
 def get_bssid_for_essid(essid: str, logger, interface: str) -> list[str]:
@@ -75,7 +69,7 @@ def packet_handler(pkt: Packet, hosts: list[str]):
 def get_hosts_on_bssid(bssid: str, logger, interface: str) -> list[str]:
     hosts = []
     sniff(
-        iface="wlan0",
+        iface=interface,
         prn=packet_handler,
         lfilter=lambda pkt: pkt.haslayer(Dot11) and pkt.addr3 == bssid)
 

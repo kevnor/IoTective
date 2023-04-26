@@ -94,8 +94,7 @@ def subnet_to_cidr(subnet_mask: str) -> str:
         else:
             break
 
-    return cidr
-
+    return str(cidr)
 
 
 def create_scan_file_path():
@@ -130,7 +129,6 @@ def parse_scan_results(scan_results):
 
 
 def format_vulns_scan(ports):
-    print(json.dumps(ports, indent=4, sort_keys=True))
     port_cves = {}
 
     for port, data in ports.items():

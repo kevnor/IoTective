@@ -8,7 +8,7 @@ from configparser import ConfigParser
 import os
 import subprocess
 import pyrcrack
-from core.utils.console import print_error
+from core.utils.console import print_error, choose_nic
 from core.utils.formatting import subnet_to_cidr
 from platform import system
 import sys
@@ -135,13 +135,20 @@ def get_interface_for_ip_range(ip_range: str):
     return None
 
 
-def get_wifi_network_name(interface: str):
+def get_connected_wifi_network(interface: str) -> dict | None:
     try:
         output = subprocess.check_output(['iwconfig', interface])
         output = output.decode('utf-8')
+        result = {
+                "ESSID": "",
+                "BSSID": ""
+                  }
         for line in output.split('\n'):
-            if 'ESSID:' in line:
-                return line.split('"')[1]
+            if "ESSID:" in line:
+                result["ESSID"] = line.split('"')[1]
+            if "Access Point:" in line:
+                result["BSSID"] = line.split("Access Point:")[1]
+        return result
     except subprocess.CalledProcessError:
         pass
     return None
@@ -212,24 +219,32 @@ def is_root() -> bool:
         sys.exit(1)
 
 
-def get_ip_address() -> str:
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-        sock.connect(("1.1.1.1", 80))
-        return sock.getsockname()[0]
+def get_ip_range(logger, console):
+    int_faces = {}
 
+    for int_face, addresses in psutil.net_if_addrs().items():
+        for addr in addresses:
+            try:
+                ip_address = ipaddress.IPv4Address(addr.address)
+            except ValueError:
+                continue
 
-def get_ip_range(logger) -> str:
-    ip = get_ip_address()
-    logger.info("Retrieving IP range...")
+            if ip_address.is_loopback or ip_address.is_unspecified:
+                continue
 
-    if system().lower() == "windows":
-        output = subprocess.run(["ipconfig"], capture_output=True).stdout.decode()
-        index = output.find(ip)
-        mask = output[index:].split("\n")[0].split(":")[-1].strip()
-        subnet = ipaddress.IPv4Network(f"{ip}/{mask}", strict=False)
+            int_faces[int_face] = {
+                'ip_address': str(ip_address),
+                'netmask': str(addr.netmask),
+            }
+
+    if len(int_faces) > 1:
+        logger.info(f"Found multiple private network interfaces...")
+        nic = choose_nic(console=console, interfaces=int_faces)
+        ip_range = int_faces[nic]["ip_address"] + "/" + str(subnet_to_cidr(int_faces[nic]["netmask"]))
+        return ip_range
+    elif len(int_faces) == 1:
+        for int_face in int_faces:
+            ip_range = int_faces[int_face]["ip_address"] + "/" + str(subnet_to_cidr(int_faces[int_face]["netmask"]))
+            return ip_range
     else:
-        output = subprocess.run(["ip", "-o", "-f", "inet", "addr", "show"], capture_output=True).stdout.decode()
-        regex = f"\\b{ip}\/\\b([0-9]|[12][0-9]|3[0-2])\\b"
-        subnet = ipaddress.IPv4Network(search(regex, output).group(), strict=False)
-    logger.info(f"Using {str(subnet)} as target IP range")
-    return str(subnet)
+        return None

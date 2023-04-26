@@ -1,33 +1,6 @@
-from enum import Enum
 from typing import List, Dict
-from nmap3 import Nmap, NmapHostDiscovery, NmapScanTechniques, NmapExecutionError, NmapNotInstalledError
-
-# Functions:
-from core.utils.formatting import subnet_to_cidr, parse_scan_results
+from nmap3 import Nmap, NmapHostDiscovery, NmapExecutionError, NmapNotInstalledError
 from core.utils.host import is_root
-from core.utils.directory import get_config
-
-
-class ScanMode(Enum):
-    Normal = 0
-    Noise = 1
-    Evade = 2
-
-
-def nmap_enumeration():
-    nmp = Nmap()
-
-    # Get network interface configuration
-    config, config_file = get_config()
-    config.read("config.ini")
-    ip = config.get("Network Interface", "ipv4")
-    netmask = config.get("Network Interface", "netmask")
-    ip_range = f"{ip}/{subnet_to_cidr(netmask)}"
-
-    # Perform nmap scan on IP range of network interface
-    arguments = "-n -sV --top-ports 10000 -T4 --open"
-    results = nmp.nmap_version_detection(target=ip_range, args=arguments)
-    return parse_scan_results(scan_results=results)
 
 
 def get_live_hosts(scan_results: Dict) -> List[Dict[str, str]]:
@@ -55,31 +28,6 @@ def get_live_hosts(scan_results: Dict) -> List[Dict[str, str]]:
                 'mac': mac_address,
                 'vendor': vendor
             })
-    return live_hosts
-
-
-def ping_scan(target: str, logger) -> List[Dict[str, str]]:
-    """
-    Perform a ping scan on the specified targets.
-
-    Args:
-        target (str): The IP address or CIDR range to scan.
-        logger: The logger to use for logging.
-
-    Returns:
-        List[Dict[str, str]]: A list of live hosts, each represented as a dictionary with keys
-        'ipv4', 'mac', and 'vendor'.
-    """
-    nmp = NmapScanTechniques()
-    logger.info(f"Performing Ping scan on {target}")
-    result = nmp.nmap_ping_scan(target=target)
-    live_hosts = get_live_hosts(result)
-
-    if live_hosts:
-        logger.info(f"Found {len(live_hosts)} live hosts")
-    else:
-        logger.info(f"Could not find any live hosts")
-
     return live_hosts
 
 

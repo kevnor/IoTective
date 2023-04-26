@@ -11,6 +11,7 @@ from platform import system
 from os import get_terminal_size
 import textwrap
 from rich.console import Console, Group
+from rich.prompt import Prompt
 from rich.layout import Layout
 from rich.table import Table
 from rich.panel import Panel
@@ -186,45 +187,22 @@ def print_error(message):
     console.print(text)
 
 
+def print_arp_scan_hosts(hosts: list[dir], console):
+    table = Table()
+    table.add_column("MAC")
+    table.add_column("IPv4")
+    table.add_column("Vendor")
+
+    for host in hosts:
+        table.add_row(host["mac"], host["ipv4"], host["vendor"])
+
+    console.print(table)
+
+
 def cli():
     parser = ArgumentParser(
         prog="IoTective",
         description="Internet of Things automated security scanning and penetration testing tool."
-    )
-
-    parser.add_argument(
-        "-c",
-        "--configure",
-        help="start configuration wizard",
-        required=False,
-        action="store_true"
-    )
-
-    parser.add_argument(
-        "--run",
-        required=False,
-        action="store_true",
-        help="run the scanner"
-    )
-
-    parser.add_argument(
-        "-st",
-        "--scan-type",
-        help="Scan type.",
-        type=str,
-        required=False,
-        default=None,
-        choices=["arp", "ping"],
-    )
-
-    parser.add_argument(
-        "-m",
-        "--mode",
-        help="Scan mode.",
-        default="normal",
-        type=str,
-        required=False,
-        choices=["evade", "noise", "normal"],
     )
 
     return parser.parse_args()
@@ -243,6 +221,36 @@ def make_host_scan_layout(port_size: int) -> Layout:
         Layout(name="ports"),
     )
     return layout
+
+
+def choose_nic(console, interfaces: dict) -> str:
+    # create table headers
+    table = Table(title="Network Interfaces")
+    table.add_column(justify="right", style="red")
+    table.add_column("Name", justify="left", style="cyan")
+    table.add_column("IP Range", justify="left", style="magenta")
+    count = 0
+
+    lookup = {}
+
+    # get all network interfaces and their IP addresses
+    for interface in interfaces:
+        count += 1
+        ip_address = interfaces[interface]["ip_address"]
+        netmask = interfaces[interface]["netmask"]
+        lookup[count] = interface
+
+        cidr = sum(bin(int(x)).count('1') for x in netmask.split('.'))
+        table.add_row(str(count), interface, f"{ip_address}/{cidr}")
+
+    # display table and prompt user to choose an interface
+    console.print(table)
+    selected_interface = None
+    while selected_interface is None:
+        selected_row = Prompt.ask("Select an interface: ", choices=[str(i+1) for i in range(len(interfaces))])
+        selected_interface = lookup[int(selected_row)] if lookup[int(selected_row)] else None
+
+    return selected_interface
 
 
 def make_header(host_ip) -> Panel:
@@ -282,7 +290,6 @@ def make_host_info(host: Host) -> Panel:
 
 
 def make_port_info(ports: list[Port]) -> Panel:
-    print(len(ports))
     if len(ports) > 0:
         port_info = Table(padding=1, box=box.MINIMAL)
         port_info.add_column("Port", style="cyan")
@@ -296,8 +303,8 @@ def make_port_info(ports: list[Port]) -> Panel:
                 port.port_id,
                 port.service_name,
                 port.product,
-                port.version,
-                str(len(port.cves)))
+                port.version
+            )
     else:
         port_info = Text("No open ports identified.")
 
@@ -313,31 +320,3 @@ def make_port_info(ports: list[Port]) -> Panel:
     )
 
     return port_panel
-
-
-def make_scan_layout() -> Layout:
-    layout = Layout(name="scan")
-
-    top_banner = Panel("IoTective", style="bold white on blue")
-    layout.split_row(top_banner)
-
-    main_area = Layout()
-    layout.split_row(main_area)
-
-    console_output = Panel("Console Output", title="Output")
-    main_area.split_column(console_output)
-
-    right_section = Layout()
-    main_area.split_column(right_section)
-
-    summary_table = Table(title="Summary")
-    summary_table.add_column("Network", justify="center")
-    summary_table.add_column("Devices Found", justify="center")
-    summary_table.add_row("My Network", "10")
-    right_section.split_row(summary_table)
-
-    # Add the latest discovered host information to the lower section of the right section
-    host_info = Panel("Latest Host Info", title="Host Info")
-    right_section.split_row(host_info)
-
-    return layout
