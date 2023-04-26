@@ -6,7 +6,6 @@ import json
 from configparser import ConfigParser
 from rich.text import Text
 import logging
-from argparse import ArgumentParser
 from platform import system
 from os import get_terminal_size
 import textwrap
@@ -197,15 +196,6 @@ def print_arp_scan_hosts(hosts: list[dir], console):
         table.add_row(host["mac"], host["ipv4"], host["vendor"])
 
     console.print(table)
-
-
-def cli():
-    parser = ArgumentParser(
-        prog="IoTective",
-        description="Internet of Things automated security scanning and penetration testing tool."
-    )
-
-    return parser.parse_args()
 
 
 def make_host_scan_layout(port_size: int) -> Layout:

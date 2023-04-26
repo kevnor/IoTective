@@ -22,16 +22,24 @@ def scan_target(target: str, console: Any, logger: Any) -> List[Host]:
     live_hosts = arp_scan(target=target, logger=logger)
     if len(live_hosts) > 0:
         print_arp_scan_hosts(hosts=live_hosts, console=console)
-        return analysed_hosts
 
         # Perform a port scan on each live host and analyse the results
         for host in live_hosts:
             try:
                 port_scan_result = port_scan(target=host["ipv4"], logger=logger)
-                analysed_hosts.append(analyse_host(host=host, scan_result=port_scan_result, console=console, logger=logger))
+                analysed_hosts.append(
+                    analyse_host(
+                        host=host,
+                        scan_result=port_scan_result,
+                        console=console,
+                        logger=logger
+                    )
+                )
             except Exception as e:
                 logger.error(f"Port scan for host {host} failed: {str(e)}")
-                continue
+                analysed_hosts.append(Host(ip=host["ipv4"], mac=host["mac"], vendor=host["vendor"]))
+    else:
+        console.info("Could not find any hosts using ARP scan")
     return analysed_hosts
 
 
