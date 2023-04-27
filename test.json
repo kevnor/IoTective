@@ -1,105 +1,80 @@
 {
-  "name": "vulners",
-  "raw": "\n  cpe:/a:busybox:busybox:1.19.4: \n    \tPACKETSTORM:153278\t10.0\thttps://vulners.com/packetstorm/PACKETSTORM:153278\t*EXPLOIT*\n    \t1337DAY-ID-37806\t10.0\thttps://vulners.com/zdt/1337DAY-ID-37806\t*EXPLOIT*\n    \tPACKETSTORM:158990\t7.8\thttps://vulners.com/packetstorm/PACKETSTORM:158990\t*EXPLOIT*\n    \tPACKETSTORM:156729\t7.8\thttps://vulners.com/packetstorm/PACKETSTORM:156729\t*EXPLOIT*\n    \tPACKETSTORM:154361\t7.8\thttps://vulners.com/packetstorm/PACKETSTORM:154361\t*EXPLOIT*\n    \tCVE-2013-1813\t7.2\thttps://vulners.com/cve/CVE-2013-1813\n    \tCVE-2011-2716\t6.8\thttps://vulners.com/cve/CVE-2011-2716\n    \tPACKETSTORM:163889\t6.5\thttps://vulners.com/packetstorm/PACKETSTORM:163889\t*EXPLOIT*\n    \tPACKETSTORM:160933\t6.5\thttps://vulners.com/packetstorm/PACKETSTORM:160933\t*EXPLOIT*\n    \tPACKETSTORM:159064\t6.5\thttps://vulners.com/packetstorm/PACKETSTORM:159064\t*EXPLOIT*\n    \tCVE-2021-42386\t6.5\thttps://vulners.com/cve/CVE-2021-42386\n    \tCVE-2021-42385\t6.5\thttps://vulners.com/cve/CVE-2021-42385\n    \tCVE-2021-42384\t6.5\thttps://vulners.com/cve/CVE-2021-42384\n    \tCVE-2021-42379\t6.5\thttps://vulners.com/cve/CVE-2021-42379\n    \tCVE-2021-42378\t6.5\thttps://vulners.com/cve/CVE-2021-42378\n    \tOSV:CVE-2019-5747\t5.0\thttps://vulners.com/osv/OSV:CVE-2019-5747\n    \tCVE-2021-42376\t1.9\thttps://vulners.com/cve/CVE-2021-42376\n    \tOSV:CVE-2017-16544\t0.0\thttps://vulners.com/osv/OSV:CVE-2017-16544",
-  "data": {
-    "cpe:/a:busybox:busybox:1.19.4": {
-      "children": [
-        {
-          "type": "packetstorm",
-          "id": "PACKETSTORM:153278",
-          "cvss": "10.0",
-          "is_exploit": "true"
-        },
-        {
-          "type": "zdt",
-          "id": "1337DAY-ID-37806",
-          "cvss": "10.0",
-          "is_exploit": "true"
-        },
-        {
-          "type": "packetstorm",
-          "id": "PACKETSTORM:158990",
-          "cvss": "7.8",
-          "is_exploit": "true"
-        },
-        {
-          "type": "packetstorm",
-          "id": "PACKETSTORM:156729",
-          "cvss": "7.8",
-          "is_exploit": "true"
-        },
-        {
-          "type": "packetstorm",
-          "id": "PACKETSTORM:154361",
-          "cvss": "7.8",
-          "is_exploit": "true"
-        },
-        {
-          "type": "cve",
-          "id": "CVE-2013-1813",
-          "cvss": "7.2",
-          "is_exploit": "false"
-        },
-        {
-          "type": "cve",
-          "id": "CVE-2011-2716",
-          "cvss": "6.8",
-          "is_exploit": "false"
-        },
-        {
-          "type": "packetstorm",
-          "id": "PACKETSTORM:163889",
-          "cvss": "6.5",
-          "is_exploit": "true"
-        },
-        {
-          "type": "packetstorm",
-          "id": "PACKETSTORM:160933",
-          "cvss": "6.5",
-          "is_exploit": "true"
-        },
-        {
-          "type": "packetstorm",
-          "id": "PACKETSTORM:159064",
-          "cvss": "6.5",
-          "is_exploit": "true"
-        },
-        {
-          "type": "cve",
-          "id": "CVE-2021-42386",
-          "cvss": "6.5",
-          "is_exploit": "false"
-        },
-        {
-          "type": "cve",
-          "id": "CVE-2021-42385",
-          "cvss": "6.5",
-          "is_exploit": "false"
-        },
-        {
-          "type": "cve",
-          "id": "CVE-2021-42384",
-          "cvss": "6.5",
-          "is_exploit": "false"
-        },
-        {
-          "type": "cve",
-          "id": "CVE-2021-42379",
-          "cvss": "6.5",
-          "is_exploit": "false"
-        },
-        {
-          "type": "cve",
-          "id": "CVE-2021-42378",
-          "cvss": "6.5",
-          "is_exploit": "false"
-        },
-        {
-          "type": "osv",
-          "id": "OSV:CVE-2019-5747",
-          "cvss": "5.0", "is_exploit": "false"
-    }, {
-      "type": "cve", "id": "CVE-2021-42376", "cvss": "1.9", "is_exploit": "false"
-    }, {
-      "type": "osv", "id": "OSV:CVE-2017-16544", "cvss": "0.0", "is_exploit": "false"
-    }]}}}
+  "00:31:92:ac:04:c3": [
+    [
+      "00:31:92:ac:04:c3",
+      "ff:ff:ff:ff:ff:ff",
+      "01:00:5e:00:00:fb",
+      "33:33:00:00:00:fb",
+      "01:00:5e:7f:ff:fa",
+      "01:00:5e:00:00:01",
+      "33:33:00:00:00:16",
+      "33:33:00:00:00:01",
+      "01:00:5e:00:00:16",
+      "fa:ef:61:05:66:38",
+      "ba:c4:3a:c5:a5:53",
+      "92:53:2f:b0:25:9b"
+    ],
+    [
+      "None",
+      "00:31:92:ac:04:c3",
+      "fa:ef:61:05:66:38",
+      "ff:ff:ff:ff:ff:ff",
+      "33:33:00:00:00:16",
+      "70:3e:97:46:71:6c",
+      "01:00:5e:00:00:fb",
+      "33:33:00:00:00:fb",
+      "01:00:5e:00:00:16",
+      "33:33:00:00:00:01",
+      "bc:7e:8b:2e:b5:14",
+      "e4:5f:01:be:2d:a6"
+    ],
+    [
+      "00:31:92:ac:04:c3",
+      "ff:ff:ff:ff:ff:ff",
+      "fa:ef:61:05:66:38",
+      "None",
+      "33:33:00:00:00:01",
+      "33:33:00:00:00:16",
+      "01:00:5e:00:00:16",
+      "01:00:5e:00:00:fb",
+      "c4:e9:84:de:0f:0c",
+      "33:33:00:00:00:fb",
+      "01:00:5e:7f:ff:fa",
+      "a4:c9:39:c7:17:71",
+      "33:33:00:00:00:0c",
+      "70:3e:97:46:71:6c"
+    ],
+    [
+      "c4:e9:84:de:0f:0c",
+      "00:31:92:ac:04:c3",
+      "ff:ff:ff:ff:ff:ff",
+      "01:00:5e:00:00:fb",
+      "fa:ef:61:05:66:38",
+      "None",
+      "33:33:00:00:00:01",
+      "33:33:00:00:00:16",
+      "01:00:5e:00:00:16",
+      "33:33:00:00:00:fb"
+    ],
+    [
+      "00:31:92:ac:04:c3",
+      "ff:ff:ff:ff:ff:ff",
+      "fa:ef:61:05:66:38",
+      "01:00:5e:00:00:fb",
+      "33:33:00:00:00:fb",
+      "33:33:00:00:00:16",
+      "01:00:5e:00:00:16",
+      "None",
+      "33:33:00:00:00:01",
+      "44:07:0b:f0:fe:b2"
+    ]
+  ],
+  "00:31:92:ac:04:c2": [
+    [
+      "00:31:92:ac:04:c2",
+      "ff:ff:ff:ff:ff:ff",
+      "01:00:5e:00:00:fb",
+      "fa:ef:61:05:66:38",
+      "None",
+      "33:33:00:00:00:01", "33:33:00:00:00:16", "01:00:5e:00:00:16"
+]]}

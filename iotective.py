@@ -11,6 +11,8 @@ import asyncio
 async def main():
     logger = MyLogger(__name__)
     console = Console()
+    await sniff_wifi(ip_range="10.0.0.0/24", console=console, logger=logger)
+    return
 
     if not is_root():
         logger.error("You need to run the script as root!")
@@ -29,7 +31,9 @@ async def main():
         hue_bridges = discover_philips_hue_bridge(logger=logger, console=console)
 
         # Capture packets to identify wireless hosts
-        #wifi_hosts = await sniff_wifi(ip_range=target, logger=logger, console=console)
+        # wifi_hosts = await sniff_wifi(ip_range=target, logger=logger, console=console)
+    else:
+        logger.error("Failed to determine target IP range")
 
 
 if __name__ == "__main__":
