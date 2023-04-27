@@ -142,44 +142,32 @@ class Port:
         self.cves.append(cve)
 
 
-def init_host(host: dict, host_key: Dict[str, Any]) -> Host:
-    ip = host["ipv4"]
-    mac = host.get("mac", "Unknown")
-    vendor = host.get("vendor", "Unknown")
-    if vendor == "Unknown":
-        vendor = host_key.get(ip, {}).get("macaddress", {}).get("vendor", "Unknown")
+def update_host(host: Host, data: Dict[str, Any]) -> Host:
+    if host.vendor == "Unknown":
+        host.vendor = data.get("macaddress", {}).get("vendor", host.vendor)
 
-    os = host_key.get(ip, {}).get("osmatch", [{}])[0].get("name", "Unknown")
-    os_accuracy = host_key.get(ip, {}).get("osmatch", [{}])[0].get("accuracy", "Unknown")
-    if ip in host_key:
-        os_type = host_key.get(ip, {}).get("osmatch", [{}])[0].get("osclass", [{}]).get("type", "Unknown")
-    else:
-        os_type = "Unknown"
-
-    return Host(ip=ip, mac=mac, vendor=vendor, os=os, os_accuracy=os_accuracy, os_type=os_type)
+    osmatch = data.get("osmatch", [{}])[0]
+    if host.os == "Unknown":
+        host.os = osmatch.get("name", "Unknown")
+    if host.os_accuracy == 0:
+        host.os_accuracy = osmatch.get("accuracy", "Unknown")
+    if host.os_type == "Unknown":
+        host.os_type = osmatch.get("osclass", {}).get("type", "Unknown")
+    return host
 
 
 def init_port(port: dict) -> Port:
-    protocol = port.get("protocol", "Unknown")
-    port_id = port.get("portid", "Unknown")
-    service_name = port.get("service", {}).get("name", "Unknown")
-    product = port.get("service", {}).get("product", "Unknown")
-    version = port.get("service", {}).get("version", "Unknown")
-    cpe = [c.get("cpe", "Unknown") for c in port.get("cpe", [])]
-    cves = []
-    for script in port.get("scripts", {}):
-        if script["name"] == "vulners":
+    new_port = Port()
+    new_port.protocol = port.get("protocol", "Unknown")
+    new_port.port_id = port.get("portid", "Unknown")
+    new_port.service_name = port.get("service", {}).get("name", "Unknown")
+    new_port.product = port.get("service", {}).get("product", "Unknown")
+    new_port.version = port.get("service", {}).get("version", "Unknown")
+    new_port.cpe = [c.get("cpe", "Unknown") for c in port.get("cpe", [])]
+    for script in port.get("scripts", []):
+        if script and script["name"] == "vulners" and "data" in script:
             for cpe in script["data"]:
-                for child in script["data"][cpe]["children"]:
-                    cve = child
-                    cve["cpe"] = cpe
-                    cves.append(cve)
-    return Port(
-        protocol=protocol,
-        port_id=port_id,
-        service_name=service_name,
-        product=product,
-        version=version,
-        cpe=cpe,
-        cves=cves,
-    )
+                if "children" in script["data"][cpe]:
+                    for cve in script["data"][cpe]["children"]:
+                        new_port.add_cve(cve)
+    return new_port

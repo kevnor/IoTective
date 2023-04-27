@@ -29,11 +29,11 @@ async def main():
         hue_bridges = discover_philips_hue_bridge(logger=logger, console=console)
 
         # Capture packets to identify wireless hosts
-        wifi_hosts = await sniff_wifi(ip_range=target, logger=logger, console=console)
+        #wifi_hosts = await sniff_wifi(ip_range=target, logger=logger, console=console)
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        raise SystemExit("Ctrl+C pressed. Exiting.")
+        raise SystemExit("\nCtrl+C pressed. Exiting.")

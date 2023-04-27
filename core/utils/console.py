@@ -3,7 +3,6 @@ from rich.align import Align
 
 from core.utils.directory import get_latest_scan_path
 import json
-from configparser import ConfigParser
 from rich.text import Text
 import logging
 from platform import system
@@ -65,62 +64,6 @@ def get_terminal_width() -> int:
         width -= 1
 
     return width
-
-
-def print_scan_type_config():
-    config = ConfigParser()
-    config.read("config.ini")
-
-    # Use dictionary comprehension to format boolean values
-    scan_types = {scan_type: "Yes" if config.getboolean("Scan Types", scan_type) else "No"
-                  for scan_type in config.options("Scan Types")}
-
-    table = Table(title="Scan Type Configuration")
-    table.add_column("Scan Type", style="cyan")
-    table.add_column("Enabled", justify="right")
-
-    # Add rows to table
-    for scan_type, enabled in scan_types.items():
-        table.add_row(scan_type, enabled)
-
-    console = Console()
-    console.print(table)
-
-
-def print_nics(nics):
-    console = Console()
-    table = Table(title="Available Network Interfaces")
-    table.add_column("Nr", style="cyan")
-    table.add_column("Name")
-    table.add_column("IPv4 Address")
-    table.add_column("Netmask")
-
-    for nic in nics:
-        ipv4_address = f"{nics[nic]['IPv4']['address']}" if "IPv4" in nics[nic] else ""
-        ipv4_netmask = f"{nics[nic]['IPv4']['netmask']}" if "IPv4" in nics[nic] else ""
-        table.add_row(
-            str(nic),
-            nics[nic]["name"],
-            ipv4_address,
-            ipv4_netmask
-        )
-
-    console.print(table)
-
-
-def print_nic_config():
-    config = ConfigParser()
-    config.read("config.ini")
-
-    table = Table(title="Network Interface Configuration")
-    table.add_column("Attribute", style="cyan")
-    table.add_column("Value")
-
-    for attribute, value in config.items("Network Interface"):
-        table.add_row(attribute, value)
-
-    console = Console()
-    console.print(table)
 
 
 def print_wireless_interfaces(interfaces):
@@ -186,25 +129,25 @@ def print_error(message):
     console.print(text)
 
 
-def print_arp_scan_hosts(hosts: list[dir], console):
+def print_arp_scan_hosts(hosts: list[Host], console):
     table = Table()
     table.add_column("MAC")
     table.add_column("IPv4")
     table.add_column("Vendor")
 
     for host in hosts:
-        table.add_row(host["mac"], host["ipv4"], host["vendor"])
+        table.add_row(host.mac, host.ip, host.vendor)
 
     console.print(table)
 
 
-def make_host_scan_layout(port_size: int) -> Layout:
+def make_host_scan_layout() -> Layout:
     """Define the layout."""
     layout = Layout(name="host")
 
     layout.split(
         Layout(name="header", size=3),
-        Layout(name="main", minimum_size=port_size),
+        Layout(name="main"),
     )
     layout["main"].split_row(
         Layout(name="info"),
@@ -280,7 +223,7 @@ def make_host_info(host: Host) -> Panel:
 
 
 def make_port_info(ports: list[Port]) -> Panel:
-    if len(ports) > 0:
+    if ports is not None and len(ports) > 0:
         port_info = Table(padding=1, box=box.MINIMAL)
         port_info.add_column("Port", style="cyan")
         port_info.add_column("Service", style="blue")
@@ -289,11 +232,16 @@ def make_port_info(ports: list[Port]) -> Panel:
         port_info.add_column("CVEs", style="red")
 
         for port in ports:
+            cve_nr = 0
+            if port.cves is not None:
+                cve_nr = len(port.cves)
+
             port_info.add_row(
                 port.port_id,
                 port.service_name,
                 port.product,
-                port.version
+                port.version,
+                str(cve_nr)
             )
     else:
         port_info = Text("No open ports identified.")

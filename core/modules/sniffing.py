@@ -1,8 +1,9 @@
 from core.utils.host import get_interface_for_ip_range, is_wireless_interface, get_connected_wifi_network, set_wireless_mode
 from core.actions.packet_capture import get_bssid_for_essid, get_hosts_on_bssid
+from core.utils.models import Host
 
 
-async def sniff_wifi(ip_range: str, logger, console):
+async def sniff_wifi(ip_range: str, logger, console) -> list[Host]:
     try:
         interface = get_interface_for_ip_range(ip_range=ip_range)
 
