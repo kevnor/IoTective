@@ -56,7 +56,7 @@ def is_wireless_interface(iface: str) -> bool:
             return False
 
 
-def get_interface_for_ip_range(ip_range: str):
+def get_interface_for_ip_range(ip_range: str) -> str:
     subnet_mask = None
     for interface in netifaces.interfaces():
         addrs = netifaces.ifaddresses(interface)
@@ -76,7 +76,7 @@ def get_interface_for_ip_range(ip_range: str):
                 for addr in addrs[socket.AF_INET]:
                     if 'addr' in addr and ipaddress.IPv4Address(addr.get('addr')) in network_address:
                         return interface
-    return None
+    return ""
 
 
 def get_connected_wifi_network(interface: str) -> dict | None:
@@ -153,7 +153,7 @@ def is_root() -> bool:
         sys.exit(1)
 
 
-def get_ip_range(logger, console):
+def get_ip_range(logger, console) -> str:
     int_faces = {}
 
     for int_face, addresses in psutil.net_if_addrs().items():
@@ -181,4 +181,17 @@ def get_ip_range(logger, console):
             ip_range = int_faces[int_face]["ip_address"] + "/" + str(subnet_to_cidr(int_faces[int_face]["netmask"]))
             return ip_range
     else:
-        return None
+        return ""
+
+
+def check_monitor_mode_support(interface: str) -> bool:
+    try:
+        # Check if the interface supports monitoring mode
+        output = subprocess.check_output(f"iw list | grep -A4 {interface} | grep -o 'Monitor'", shell=True)
+        if "Monitor" in output.decode():
+            return True
+        else:
+            return False
+    except subprocess.CalledProcessError:
+        # Interface not found
+        return False
