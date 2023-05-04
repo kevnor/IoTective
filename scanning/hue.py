@@ -1,5 +1,5 @@
 import requests
-from core.protocols.mdns import MdnsScan
+from .mdns import MdnsScan
 from core.utils.models import Bridge
 
 
@@ -14,11 +14,11 @@ def discover_philips_hue_bridge(logger, console):
     else:
         logger.info(f"Found {len(discovered_bridges)} Philips Hue bridge(s)")
 
-    # Add bridges discovered by mDNS
-    for bridge in discovered_bridges:
-        new_bridge = Bridge(bridge["address"])
-        new_bridge.update_bridge(data=bridge)
-        bridges[new_bridge.ip] = new_bridge
+        # Add bridges discovered by mDNS
+        for bridge in discovered_bridges:
+            new_bridge = Bridge(bridge["address"])
+            new_bridge.update_bridge(data=bridge)
+            bridges[new_bridge.ip] = new_bridge
 
     # Query Philips Hue bridge public endpoint
     # Rate limit: one request per 15 minutes per client

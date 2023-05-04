@@ -1,7 +1,7 @@
 from prettytable import PrettyTable
 from rich.align import Align
 
-from core.utils.directory import get_latest_scan_path
+from .utilities import get_latest_scan_path
 import json
 from rich.text import Text
 import logging
@@ -15,8 +15,8 @@ from rich.table import Table
 from rich.panel import Panel
 from datetime import datetime
 from rich import box
-
-from core.utils.models import Host, Port
+from models.host import Host
+from models.port import Port
 
 
 def display_bluetooth_devices():

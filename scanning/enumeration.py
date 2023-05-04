@@ -1,12 +1,13 @@
 #!/bin/pyhton3
-from core.actions.nmap_host_enum import arp_scan, port_scan
-from core.utils.models import Host, init_port, update_host
+from .nmap import arp_scan, port_scan
+from .utilities import analyse_host
+from core.utils.models import Host
 from typing import List, Any
-from core.utils.console import make_header, print_arp_scan_hosts, make_host_scan_layout, make_host_info, make_port_info
+from reporting.console import print_arp_scan_hosts
 
 
-def scan_target(target: str, console: Any, logger: Any) -> List[Host]:
-    """Perform a scan on the specified target.
+def scan_ip_range(target: str, console: Any, logger: Any) -> List[Host]:
+    """Perform a scan on the specified IP range.
 
     Args:
         target (str): The IP address or CIDR range to scan.
@@ -41,21 +42,3 @@ def scan_target(target: str, console: Any, logger: Any) -> List[Host]:
     else:
         console.info("Could not find any hosts using ARP scan")
     return analysed_hosts
-
-
-def analyse_host(host: Host, scan_result: dict, logger, console) -> Host:
-    updated_host = host
-    layout = make_host_scan_layout()
-    layout["header"].update(make_header(host_ip=host.ip))
-
-    # Add host information from port scan
-    if host.ip in scan_result:
-        updated_host = update_host(host=host, data=scan_result[host.ip])
-        ports = [init_port(port) for port in scan_result[updated_host.ip]["ports"]]
-        for port in ports:
-            updated_host.add_port(port)
-
-    layout["ports"].update(make_port_info(ports=updated_host.ports))
-    layout["info"].update(make_host_info(host=updated_host))
-    console.print(layout)
-    return updated_host

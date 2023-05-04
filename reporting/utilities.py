@@ -1,7 +1,6 @@
 import json
 import os
 import datetime
-from core.utils.formatting import create_scan_file_path
 
 
 def get_latest_scan_path():
@@ -40,3 +39,13 @@ def create_scan_file():
         json.dump(data, file, ensure_ascii=False, indent=4)
 
     return data, path
+
+
+def create_scan_file_path():
+    # Create path and name for JSON file
+    scans_dir = os.path.join(os.getcwd(), 'scans')
+    os.makedirs(scans_dir, exist_ok=True)
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    filename = f"scan_{timestamp}.json"
+    path = os.path.join(scans_dir, filename)
+    return path

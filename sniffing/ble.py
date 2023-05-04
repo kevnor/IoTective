@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from core.utils.formatting import format_bluetooth_details
+from .utilities import format_bluetooth_details
 from bleak import BleakScanner, BleakClient
 
 

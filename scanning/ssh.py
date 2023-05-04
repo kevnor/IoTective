@@ -1,6 +1,4 @@
 import paramiko
-import os
-import sys
 
 
 def ssh_connect(target, password, username, code=0):

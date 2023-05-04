@@ -3,7 +3,7 @@ import time
 import socket
 from zeroconf import Zeroconf, ServiceBrowser
 
-from core.protocols.mdns.constants import MDNS_SERVICE_TYPES
+from .service_types import MDNS_SERVICE_TYPES
 
 DEFAULT_MDNS_TIMEOUT = 3.0
 
@@ -23,7 +23,7 @@ class MdnsListener:
         if info is not None:
             self.data.append(info)
 
-    def get_data(self):
+    def get_data(self) -> list:
         return self.data
 
 
@@ -35,10 +35,10 @@ class MdnsScan:
         self.devices = []
         self.timeout = timeout
 
-    def get_devices(self):
+    def get_devices(self) -> list:
         return self.devices
 
-    def scan(self):
+    def scan(self) -> None:
         zeroconf = Zeroconf()
         listener = MdnsListener()
         ServiceBrowser(zeroconf, self._service_type, listener)

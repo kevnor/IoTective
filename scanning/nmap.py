@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List
 from nmap3 import Nmap, NmapHostDiscovery, NmapExecutionError, NmapNotInstalledError
 from core.utils.models import Host
 

@@ -2,6 +2,50 @@ from scapy.layers.dot11 import Dot11, Dot11Elt, Dot11Beacon, Dot11ProbeResp
 from scapy.all import *
 import os
 from collections import OrderedDict
+import subprocess
+
+
+async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
+    # Get the name of the Wi-Fi network connected to the interface
+    wifi_network = get_connected_wifi_network(interface=interface)
+
+    if wifi_network is not None:
+        # Retrieve BSSIDs that use the ESSID of the AP
+        ap_bssids = discover_bssids_for_ssid(interface=interface, ssid=wifi_network['ESSID'], logger=logger)
+        hosts = {}
+
+        # Get MAC addresses of hosts connected to each BSSID
+        if len(ap_bssids) > 0:
+            for bid in ap_bssids:
+                hosts[bid] = []
+                for channel in ap_bssids[bid]:
+                    hosts[bid].append(get_unique_hosts(interface=interface, bssid=bid, channel=channel, logger=logger))
+        else:
+            logger.error("Did not manage to capture BSSID(s) of AP")
+
+        # clean_up_interface = set_wireless_mode(interface=interface, new_mode="Managed")
+        return hosts
+    else:
+        logger.error("Could not switch to monitoring mode")
+
+
+def get_connected_wifi_network(interface: str) -> dict | None:
+    try:
+        output = subprocess.check_output(['iwconfig', interface])
+        output = output.decode('utf-8')
+        result = {
+                "ESSID": "",
+                "BSSID": ""
+                  }
+        for line in output.split('\n'):
+            if "ESSID:" in line:
+                result["ESSID"] = line.split('"')[1]
+            if "Access Point:" in line:
+                result["BSSID"] = line.split("Access Point:")[1]
+        return result
+    except subprocess.CalledProcessError:
+        pass
+    return None
 
 
 def get_hosts_on_bssid(bssid: str, logger, interface: str) -> list[str]:
