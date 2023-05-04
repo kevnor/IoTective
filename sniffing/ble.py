@@ -16,7 +16,6 @@ async def bluetooth_enumeration():
         try:
             data = format_bluetooth_details(devices[dev])
             data["services"] = await get_device_services(dev)
-            print(data)
             bluetooth_data[dev] = data
         except:
             continue
