@@ -1,7 +1,7 @@
 #!/bin/pyhton3
 from .nmap import arp_scan, port_scan
 from .utilities import analyse_host
-from core.utils.models import Host
+from models.host import Host
 from typing import List, Any
 from reporting.console import print_arp_scan_hosts
 

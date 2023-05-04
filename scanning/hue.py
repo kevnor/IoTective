@@ -1,6 +1,6 @@
 import requests
 from .mdns import MdnsScan
-from core.utils.models import Bridge
+from models.bridge import Bridge
 
 
 def discover_philips_hue_bridge(logger, console):

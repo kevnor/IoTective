@@ -1,6 +1,6 @@
 from typing import List
 from nmap3 import Nmap, NmapHostDiscovery, NmapExecutionError, NmapNotInstalledError
-from core.utils.models import Host
+from models.host import Host
 
 
 def arp_scan(target: str, logger) -> List[Host]:
