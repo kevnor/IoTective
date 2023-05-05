@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from scapy.layers.dot11 import Dot11, Dot11Elt, Dot11Beacon, Dot11ProbeResp
 from scapy.all import *
 import os
@@ -10,6 +12,9 @@ async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
     wifi_network = get_connected_wifi_network(interface=interface)
 
     if wifi_network is not None:
+
+
+
         # Retrieve BSSIDs that use the ESSID of the AP
         ap_bssids = discover_bssids_for_ssid(interface=interface, ssid=wifi_network['ESSID'], logger=logger)
         hosts = {}
@@ -29,7 +34,7 @@ async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
         logger.error("Could not switch to monitoring mode")
 
 
-def get_connected_wifi_network(interface: str) -> dict | None:
+def get_connected_wifi_network(interface: str) -> dict:
     try:
         output = subprocess.check_output(['iwconfig', interface])
         output = output.decode('utf-8')
@@ -45,7 +50,7 @@ def get_connected_wifi_network(interface: str) -> dict | None:
         return result
     except subprocess.CalledProcessError:
         pass
-    return None
+    return {}
 
 
 def get_hosts_on_bssid(bssid: str, logger, interface: str) -> list[str]:
@@ -135,7 +140,7 @@ def discover_bssids_for_ssid(interface: str, ssid: str, logger) -> dict:
 
     logger.info("Searching on 5GHz bands...")
     channel = 36
-    while 36 <= channel <= 40:
+    while 36 <= channel <= 165:
         previous_dict = bssid_dict.copy()
         logger.info(f"Searching on channel {channel}...")
         # Set the Wi-Fi interface to the current channel

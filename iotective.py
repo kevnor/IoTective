@@ -12,16 +12,15 @@ async def main():
     logger = MyLogger(__name__)
     console = Console()
 
-    logger.info("Starting IoTective scanner...")
     # Phase 1: Initialization
     init_data = configure(logger=logger, console=console)
-
+    logger.info("Starting IoTective scanner...")
     if init_data != {} and init_data["ip_range"] != "":
         # Phase 2: Scanning
-        hosts = scan_ip_range(target=init_data["ip_range"], logger=logger, console=console)
+        #hosts = scan_ip_range(target=init_data["ip_range"], logger=logger, console=console)
 
         # Identify Philips Hue bridges on the network
-        hue_bridges = discover_philips_hue_bridge(logger=logger, console=console)
+        #hue_bridges = discover_philips_hue_bridge(logger=logger, console=console)
 
         # Phase 3: Sniffing
         wireless_hosts = await sniffing(init_data=init_data, logger=logger, console=console)

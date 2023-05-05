@@ -1,8 +1,3 @@
-import os
-import time
-import re
-
-
 def format_bluetooth_details(raw_details):
     # Format device details into string. Accommodate errors caused by lack of data.
     dict_ = {
