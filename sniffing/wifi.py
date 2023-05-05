@@ -5,19 +5,21 @@ from scapy.all import *
 import os
 from collections import OrderedDict
 import subprocess
+import re
 
 
 async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
     # Get the name of the Wi-Fi network connected to the interface
     wifi_network = get_connected_wifi_network(interface=interface)
+    hosts = {}
 
     if wifi_network is not None:
-
-
+        set_monitor_mode = set_interface_mode(iface=interface, mode="Monitor", logger=logger)
+        if not set_monitor_mode:
+            return hosts
 
         # Retrieve BSSIDs that use the ESSID of the AP
         ap_bssids = discover_bssids_for_ssid(interface=interface, ssid=wifi_network['ESSID'], logger=logger)
-        hosts = {}
 
         # Get MAC addresses of hosts connected to each BSSID
         if len(ap_bssids) > 0:
@@ -28,10 +30,52 @@ async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
         else:
             logger.error("Did not manage to capture BSSID(s) of AP")
 
-        # clean_up_interface = set_wireless_mode(interface=interface, new_mode="Managed")
+        set_managed_mode = set_interface_mode(iface=interface, mode="Managed", logger=logger)
         return hosts
     else:
-        logger.error("Could not switch to monitoring mode")
+        logger.error("Could not find Wi-Fi network")
+
+
+def set_interface_mode(iface: str, mode: str, logger) -> bool:
+    # Check if interface exists
+    if iface not in subprocess.check_output(["iwconfig"]).decode():
+        logger.error(f"Interface {iface} does not exist")
+        return False
+
+    # Check if mode is valid
+    if mode not in ["managed", "monitor"]:
+        logger.error(f"Invalid mode {mode}")
+        return False
+
+    # Kill processes that may prevent monitor mode
+    if mode == "monitor":
+        subprocess.run(["airmon-ng", "check", "kill"], capture_output=True)
+
+    # Change mode
+    subprocess.run(["ifconfig", iface, "down"], capture_output=True)
+    subprocess.run(["iwconfig", iface, "mode", mode], capture_output=True)
+    subprocess.run(["ifconfig", iface, "up"], capture_output=True)
+
+    # Start network manager if we switched to managed mode
+    if mode == "managed":
+        subprocess.run(["systemctl", "start", "NetworkManager"], capture_output=True)
+
+    # Check if mode was set correctly
+    output = subprocess.check_output(["iwconfig", iface]).decode()
+    if mode in output:
+        logger.info(f"Interface {iface} changed to mode {mode}")
+        return True
+    else:
+        logger.error(f"Failed to change {iface} mode to {mode}")
+        return False
+
+def get_wireless_mode(interface: str):
+    output = subprocess.check_output(["iwconfig", interface])
+    match = re.search(r"Mode:(\w+)", output.decode())
+    if match:
+        return match.group(1)
+    else:
+        return None
 
 
 def get_connected_wifi_network(interface: str) -> dict:
@@ -39,9 +83,9 @@ def get_connected_wifi_network(interface: str) -> dict:
         output = subprocess.check_output(['iwconfig', interface])
         output = output.decode('utf-8')
         result = {
-                "ESSID": "",
-                "BSSID": ""
-                  }
+            "ESSID": "",
+            "BSSID": ""
+        }
         for line in output.split('\n'):
             if "ESSID:" in line:
                 result["ESSID"] = line.split('"')[1]
