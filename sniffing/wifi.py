@@ -26,11 +26,14 @@ async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
             for bid in ap_bssids:
                 hosts[bid] = []
                 for channel in ap_bssids[bid]:
-                    hosts[bid].append(get_unique_hosts(interface=interface, bssid=bid, channel=channel, logger=logger))
+                    unique_hosts = get_unique_hosts(interface=interface, bssid=bid, channel=channel, logger=logger)
+                    if unique_hosts:
+                        hosts[bid].append(unique_hosts)
         else:
             logger.error("Did not manage to capture BSSID(s) of AP")
 
         set_managed_mode = set_interface_mode(iface=interface, mode="Managed", logger=logger)
+        console.log(hosts)
         return hosts
     else:
         logger.error("Could not find Wi-Fi network")
@@ -43,7 +46,7 @@ def set_interface_mode(iface: str, mode: str, logger) -> bool:
         return False
 
     # Check if mode is valid
-    if mode not in ["managed", "monitor"]:
+    if mode not in ["Managed", "Monitor"]:
         logger.error(f"Invalid mode {mode}")
         return False
 
@@ -68,6 +71,7 @@ def set_interface_mode(iface: str, mode: str, logger) -> bool:
     else:
         logger.error(f"Failed to change {iface} mode to {mode}")
         return False
+
 
 def get_wireless_mode(interface: str):
     output = subprocess.check_output(["iwconfig", interface])

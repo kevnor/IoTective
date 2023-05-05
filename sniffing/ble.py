@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
 from .utilities import format_bluetooth_details
 from bleak import BleakScanner, BleakClient
+from rich.progress import track
 
 
-async def bluetooth_enumeration():
-    devices = await scan_devices(timeout=1)
+async def bluetooth_enumeration(logger):
+    devices = await scan_devices(logger, timeout=1)
 
     bluetooth_data = {}
-    count = 0
 
-    for dev in devices:
-        count += 1
-        print(str(count) + "/" + str(len(devices)))
-
+    for dev in track(devices, description="Processing Bluetooth devices..."):
         try:
             data = format_bluetooth_details(devices[dev])
             data["services"] = await get_device_services(dev)
             bluetooth_data[dev] = data
         except:
             continue
-    print("Managed to gather information about " + str(len(bluetooth_data)) + " ble devices.")
+    logger.info(f"Managed to gather information about {str(len(bluetooth_data))} ble devices.")
     return bluetooth_data
 
 
@@ -48,7 +45,7 @@ async def get_device_services(address, timeout=20):
         return services
 
 
-async def scan_devices(timeout=5):
-    print(f"Scanning for Bluetooth LE devices for {str(timeout)} seconds...")
+async def scan_devices(logger, timeout=5):
+    logger.info(f"Scanning for Bluetooth LE devices for {str(timeout)} seconds...")
     devices = await BleakScanner.discover(timeout=timeout, return_adv=True)
     return devices
