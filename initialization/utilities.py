@@ -7,6 +7,31 @@ import ipaddress
 from pyroute2 import IW
 from pyroute2 import IPRoute
 from pyroute2.netlink import NetlinkError
+import os
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Prompt, Confirm
+
+
+def get_ip_ranges() -> list:
+    int_faces = []
+
+    for int_face, addresses in psutil.net_if_addrs().items():
+        for addr in addresses:
+            try:
+                ip_address = ipaddress.IPv4Address(addr.address)
+            except ValueError:
+                continue
+
+            if ip_address.is_loopback or ip_address.is_unspecified:
+                continue
+
+            int_faces.append({
+                'interface': str(int_face),
+                'ip_address': str(ip_address),
+                'netmask': str(addr.netmask),
+            })
+    return int_faces
 
 
 def get_ip_range(logger, console) -> str:
@@ -119,3 +144,23 @@ def subnet_to_cidr(subnet_mask: str) -> str:
             break
 
     return str(cidr)
+
+
+def choose_zigbee_device(logger, console: Console) -> str:
+    devices = os.listdir("/dev/serial/by-id/")
+    logger.info(f"Found {len(devices)} serial device(s) connected to the host")
+
+    if len(devices) == 1:
+        use_device = Confirm.ask(f"Use '{devices[0]}' for ZigBee sniffing?")
+        if use_device:
+            return f"/dev/serial/by-id/{devices[0]}"
+    elif len(devices) > 1:
+        panel = Panel("\n".join([f"{i}. {device}" for i, device in enumerate(devices, start=1)]),
+                      title="Select a device from the list")
+        console.print(panel)
+        selected_item = Prompt.ask("Enter the number of the item you want to select",
+                                   choices=[str(i) for i in range(1, len(devices) + 1)])
+        return f"/dev/serial/by-id/{devices[int(selected_item) - 1]}"
+    else:
+        logger.error("Could not find any serial devices connected to the host")
+    return ""

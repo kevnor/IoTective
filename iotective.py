@@ -6,6 +6,7 @@ from initialization.logger import MyLogger
 from rich.console import Console
 from scanning.hue import discover_philips_hue_bridge
 import asyncio
+from app.app import IoTective
 
 
 async def main():
@@ -30,6 +31,8 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        app = IoTective()
+        app.run()
+        #asyncio.run(main())
     except KeyboardInterrupt:
         raise SystemExit("\nCtrl+C pressed. Exiting.")

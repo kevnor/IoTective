@@ -1,0 +1,152 @@
+{
+  "a2:96:72:ce:74:8d:b9:6a": {
+    "pan_id": "0xFD1D",
+    "channel": "15",
+    "permit_joins": 0,
+    "devices": [
+      {
+        "source": "0x0006",
+        "router_capacity": 1,
+        "device_capacity": 1,
+        "protocol_version": 2,
+        "stack_profile": 2,
+        "depth": "  1",
+        "update_id": " 0",
+        "lqi": " 23"
+      }
+    ]
+  },
+  "b1:52:27:27:46:60:13:69": {
+    "pan_id": "0x8751",
+    "channel": "20",
+    "permit_joins": 0,
+    "devices": [
+      {
+        "source": "0x824E",
+        "router_capacity": 1,
+        "device_capacity": 1,
+        "protocol_version": 2,
+        "stack_profile": 2,
+        "depth": "  1",
+        "update_id": " 2",
+        "lqi": " 10"
+      }
+    ]
+  },
+  "90:37:bd:0a:b6:23:5b:a2": {
+    "pan_id": "0x7765",
+    "channel": "20",
+    "permit_joins": 0,
+    "devices": [
+      {
+        "source": "0x0003",
+        "router_capacity": 1,
+        "device_capacity": 1,
+        "protocol_version": 2,
+        "stack_profile": 2,
+        "depth": "  1",
+        "update_id": " 0",
+        "lqi": " 47"
+      }
+    ]
+  },
+  "f9:e3:c7:6f:51:25:e1:dd": {
+    "pan_id": "0xA18E",
+    "channel": "20",
+    "permit_joins": 0,
+    "devices": [
+      {
+        "source": "0x0003",
+        "router_capacity": 1,
+        "device_capacity": 1,
+        "protocol_version": 2,
+        "stack_profile": 2,
+        "depth": "  1",
+        "update_id": " 0",
+        "lqi": "  0"
+      }
+    ]
+  },
+  "af:62:80:24:86:3f:b4:17": {
+    "pan_id": "0xC73F",
+    "channel": "25",
+    "permit_joins": 0,
+    "devices": [
+      {
+        "source": "0x0001",
+        "router_capacity": 1,
+        "device_capacity": 1,
+        "protocol_version": 2,
+        "stack_profile": 2,
+        "depth": "  1",
+        "update_id": " 0",
+        "lqi": " 65"
+      }
+    ]
+  },
+  "f4:7a:3d:aa:64:83:44:a2": {
+    "pan_id": "0x1E51",
+    "channel": "25",
+    "permit_joins": 0,
+    "devices": [
+      {
+        "source": "0x97BB",
+        "router_capacity": 1,
+        "device_capacity": 1,
+        "protocol_version": 2,
+        "stack_profile": 2,
+        "depth": "  1",
+        "update_id": " 0",
+        "lqi": "  0"
+      }
+    ]
+  },
+  "fb:db:24:34:7c:f2:5d:ef": {
+    "pan_id": "0x6876",
+    "channel": "11",
+    "permit_joins": 0,
+    "devices": [
+      {
+        "source": "0x0004",
+        "router_capacity": 1,
+        "device_capacity": 1,
+        "protocol_version": 2,
+        "stack_profile": 2,
+        "depth": "  1",
+        "update_id": " 0",
+        "lqi": "  0"
+      }
+    ]
+  },
+  "b5:18:35:86:30:68:07:22": {
+    "pan_id": "0xB005",
+    "channel": "25",
+    "permit_joins": 0,
+    "devices": [
+      {
+        "source": "0x0009",
+        "router_capacity": 1,
+        "device_capacity": 1,
+        "protocol_version": 2,
+        "stack_profile": 2,
+        "depth": "  2",
+        "update_id": " 0",
+        "lqi": "  0"
+      }
+    ]
+  },
+  "76:ce:a8:df:90:57:2f:58": {
+    "pan_id": "0xF008",
+    "channel": "15",
+    "permit_joins": 0,
+    "devices": [
+      {
+        "source": "0x0002",
+        "router_capacity": 1,
+        "device_capacity": 1,
+        "protocol_version": 2,
+        "stack_profile": 2,
+        "depth": "  1",
+        "update_id": " 0",
+        "lqi": "  0"
+  }]}}
