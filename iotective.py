@@ -1,38 +1,60 @@
 #!/bin/pyhton3
 from sniffing.sniffing import sniffing
-from initialization.config import configure
+from reporting.generate import generate_report
 from scanning.enumeration import scan_ip_range
 from initialization.logger import MyLogger
+from initialization.utilities import subnet_to_cidr
 from rich.console import Console
 from scanning.hue import discover_philips_hue_bridge
 import asyncio
 from app.app import IoTective
+from datetime import datetime
 
 
-async def main():
+async def main(config: dict):
+
     logger = MyLogger(__name__)
     console = Console()
+    now = datetime.now()
 
-    # Phase 1: Initialization
-    init_data = configure(logger=logger, console=console)
+    report = {
+        "file_name": now.strftime("report_%Y-%m-%d_%H-%M-%S.json"),
+        "start_time": str(now),
+        "end_time": str,
+        "config": config,
+        "network_scan": list,
+        "hue_bridge": dict[str, any],
+        "sniffing": dict[str, any]
+    }
+
     logger.info("Starting IoTective scanner...")
-    if init_data != {} and init_data["ip_range"] != "":
+    if config != {} and config["ip_address"] != "":
+        ip_range = f"{config['ip_address']}/{subnet_to_cidr(config['netmask'])}"
+
         # Phase 2: Scanning
-        #hosts = scan_ip_range(target=init_data["ip_range"], logger=logger, console=console)
+        if config["network_scanning"]:
+            # nmap scanning
+            report["network_scan"] = scan_ip_range(target=ip_range, logger=logger, console=console)
 
-        # Identify Philips Hue bridges on the network
-        #hue_bridges = discover_philips_hue_bridge(logger=logger, console=console)
-
-        # Phase 3: Sniffing
-        wireless_hosts = await sniffing(init_data=init_data, logger=logger, console=console)
+            # Identify Philips Hue bridges on the network
+            report["hue_bridge"] = discover_philips_hue_bridge(logger=logger, console=console)
     else:
         logger.error("Failed to determine target IP range")
+
+    # Phase 3: Sniffing
+    report["sniffing"] = await sniffing(config=config, logger=logger, console=console)
+    generate_report(report=report)
+
 
 
 if __name__ == "__main__":
     try:
-        app = IoTective()
-        app.run()
-        #asyncio.run(main())
+        # Phase 1: Initialization
+        interface = IoTective()
+        configuration = interface.run()
+
+        if configuration is not None:
+            asyncio.run(main(config=configuration))
+        interface.run()
     except KeyboardInterrupt:
         raise SystemExit("\nCtrl+C pressed. Exiting.")

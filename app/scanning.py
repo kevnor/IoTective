@@ -1,69 +1,111 @@
 from textual.screen import Screen
 from textual.widget import Widget
-from textual.widgets import OptionList, Label, RadioSet, RadioButton, Static, Header, Input, Switch
+from textual.widgets import OptionList, Label, RadioSet, RadioButton, Static, Header, Input, Switch, Button, TextLog
 from initialization.utilities import get_ip_ranges, subnet_to_cidr, is_wireless_interface
 from textual.app import ComposeResult, RenderResult
 from textual.widgets.option_list import Option, Separator
 from textual.containers import Vertical, Horizontal
 from textual.reactive import reactive
 from textual.messages import Message
+from typing import Dict, List, Any
 
 from textual import events
 from textual.app import App
 from textual.widgets import RadioSet, Label
+from textual.app import App, ComposeResult
+from textual.widgets import Label, RadioSet, RadioButton, Button, Switch
+from textual.widget import Widget
+from textual.reactive import reactive
+from textual.containers import Vertical
+import os
 
 
-class DisplayInfo(Static):
-    interface = reactive({})
-
-    def set_interface(self, interface):
-        self.interface = interface
-
-    def watch_interface(self, interface: dict) -> None:
-        if self.interface == {}:
-            self.update("None selected")
-        else:
-            self.update(f"{interface['interface']}")
-
-
-class Configure(Widget):
-    ip_ranges = reactive([])
-    is_wireless = reactive(False)
-    wifi_sniffing = reactive(False)
-    selected_interface = reactive(-1)
-
-    class InterfaceChanged(Message):
-        def __init__(self, index) -> None:
-            super().__init__()
-            self.index = index
+class ConfigurePane(Widget):
+    configuration: Dict[str, Any] = reactive({
+        "interface": "None Selected",
+        "ip_address": "",
+        "netmask": "",
+        "network_scanning": False,
+        "wifi_sniffing": False,
+        "ble_scanning": False,
+        "zigbee_sniffing": False,
+        "zigbee_device_path": ""
+    })
+    ip_ranges: List[Dict[str, Any]] = reactive([])
+    devices: List[str] = reactive([])
 
     def compose(self) -> ComposeResult:
-        self.ip_ranges = get_ip_ranges()
-        with Vertical():
-            yield Label("Choose network interface:")
-            with RadioSet(id="interfaces"):
-                for ran in self.ip_ranges:
-                    yield RadioButton(f"{ran['interface']}: {ran['ip_address']}/{subnet_to_cidr(ran['netmask'])}",
-                                      id=ran['interface'])
-            yield DisplayInfo()
-            yield Horizontal(
-                Static("Enable Wi-Fi sniffing?"),
-                Switch(value=False, disabled=self.is_wireless)
-            )
+        with Vertical(id="settings"):
+            yield Label("Enable Network Scanning?:", classes="section")
+            yield Switch(name="network_scanning", value=self.configuration["network_scanning"])
+            yield Label("Enable Wi-Fi Sniffing?:", classes="section")
+            yield Switch(name="wifi_sniffing", value=self.configuration["wifi_sniffing"])
+            yield RadioSet(id="interfaces", disabled=True)
+            yield Label("Enable Bluetooth Sniffing?:", classes="section")
+            yield Switch(name="ble_scanning", value=self.configuration["ble_scanning"])
+            yield Label("Enable ZigBee Sniffing?:", classes="section")
+            yield Switch(name="zigbee_sniffing", id="zigbee_sniffing", value=self.configuration["zigbee_sniffing"])
+            yield RadioSet(id="zigbee_devices", disabled=True)
 
-    def watch_selected_interface(self, indx: int):
-        if indx > 0:
-            is_wireless = is_wireless_interface(iface=self.ip_ranges[indx])
-            self.is_wireless = is_wireless
+    def on_mount(self):
+        if "serial" in os.listdir("/dev/"):
+            self.devices = os.listdir("/dev/serial/by-id/")
+            for dev in self.devices:
+                self.query_one("#zigbee_devices", RadioSet).mount(RadioButton(dev))
+        if not self.devices:
+            self.query_one("#zigbee_devices", RadioSet).visible = False
+            self.query_one("#zigbee_sniffing", Switch).disabled = True
 
-    def on_radio_set_changed(self, event: RadioSet.Changed):
-        self.selected_interface = event.index
-        display = self.query_one(DisplayInfo)
-        interface = self.ip_ranges[int(event.index)]
-        display.set_interface(interface)
+        try:
+            self.ip_ranges = get_ip_ranges()
+            if len(self.ip_ranges) < 1:
+                self.query_one("#interfaces", RadioSet).visible = False
+                self.query_one("#network_scanning", Switch).disabled = True
+                self.query_one("#wifi_sniffing", Switch).disabled = True
+            else:
+                for range in self.ip_ranges:
+                    self.query_one("#interfaces", RadioSet).mount(RadioButton(f"{range['interface']}: {range['ip_address']}/{subnet_to_cidr(range['netmask'])}"))
+        except:
+            self.query_one("#interfaces", RadioSet).visible = False
+            self.query_one("#network_scanning", Switch).disabled = True
+            self.query_one("#wifi_sniffing", Switch).disabled = True
+
+    def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        if event.radio_set.id == "interfaces":
+            int_face = self.ip_ranges[event.index]
+            self.configuration["interface"] = int_face["interface"]
+            self.configuration["ip_address"] = int_face["ip_address"]
+            self.configuration["netmask"] = int_face["netmask"]
+        elif event.radio_set.id == "zigbee_devices":
+            self.configuration["zigbee_device_path"] = f"/dev/serial/by-id/{self.devices[event.index]}"
+
+    def on_switch_changed(self, event: Switch.Changed) -> None:
+        self.configuration[event.switch.name] = event.switch.value
+        if event.switch.name == "zigbee_sniffing":
+            self.query_one("#zigbee_devices", RadioSet).disabled = not event.switch.value
+
+        if not self.configuration["network_scanning"] and not self.configuration["wifi_sniffing"]:
+            self.query_one("#interfaces", RadioSet).disabled = True
+        else:
+            self.query_one("#interfaces", RadioSet).disabled = False
 
 
 class Scanning(Screen):
+    class SubmitConfiguration(Message):
+        def __init__(self, configuration: dict) -> None:
+            super().__init__()
+            self.configuration = configuration
 
     def compose(self) -> ComposeResult:
-        yield Configure()
+        with Vertical(id="left_pane"):
+            yield Button("Start", id="start", variant="success")
+            yield Button("Back", id="back")
+        with Vertical(id="right_pane"):
+            yield ConfigurePane()
+
+    def on_button_pressed(self, event: Button.Pressed):
+        if event.button.id == "start":
+            event.stop()
+            self.post_message(self.SubmitConfiguration(self.query_one(ConfigurePane).configuration))
+        elif event.button.id == "back":
+            self.app.pop_screen()

@@ -11,6 +11,7 @@ import os
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt, Confirm
+from configparser import ConfigParser
 
 
 def get_ip_ranges() -> list:
@@ -164,3 +165,7 @@ def choose_zigbee_device(logger, console: Console) -> str:
     else:
         logger.error("Could not find any serial devices connected to the host")
     return ""
+
+def write_configuration(configuration: dict) -> None:
+    config = ConfigParser()
+

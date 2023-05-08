@@ -4,19 +4,19 @@ from .ble import bluetooth_enumeration
 from .zigbee import discover_zigbee_routers
 
 
-async def sniffing(init_data: Dict, logger, console) -> Dict[str, Any]:
+async def sniffing(config: Dict, logger, console) -> Dict[str, Any]:
     try:
         hosts = {
             "wifi": {},
             "bluetooth": [],
             "zigbee": []
         }
-        #if init_data["sniffing"]["wifi"]:
-            #hosts["wifi"] = await wifi_sniffing(interface=init_data["interface"], logger=logger, console=console)
-        #if init_data["sniffing"]["bluetooth"]:
-        #    hosts["bluetooth"] = await bluetooth_enumeration(logger)
-        if init_data["sniffing"]["zigbee"]:
-            hosts["zigbee"] = await discover_zigbee_routers(radio_path=init_data["zigbee_device_path"])
+        if config["wifi_sniffing"]:
+            hosts["wifi"] = await wifi_sniffing(interface=config["interface"], logger=logger, console=console)
+        if config["ble_scanning"]:
+            hosts["bluetooth"] = await bluetooth_enumeration(logger)
+        if config["zigbee_sniffing"]:
+            hosts["zigbee"] = await discover_zigbee_routers(radio_path=config["zigbee_device_path"])
 
         return hosts
     except Exception as e:

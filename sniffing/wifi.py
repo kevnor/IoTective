@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from scapy.layers.dot11 import Dot11, Dot11Elt, Dot11Beacon, Dot11ProbeResp
 from scapy.all import *
+from scapy.packet import Packet
 import os
 from collections import OrderedDict
 import subprocess
 import re
+from rich.progress import Progress, track
 
 
 async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
@@ -23,17 +25,26 @@ async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
 
         # Get MAC addresses of hosts connected to each BSSID
         if len(ap_bssids) > 0:
-            for bid in ap_bssids:
-                hosts[bid] = []
-                for channel in ap_bssids[bid]:
-                    unique_hosts = get_unique_hosts(interface=interface, bssid=bid, channel=channel, logger=logger)
-                    if unique_hosts:
-                        hosts[bid].append(unique_hosts)
+            num_channels = 0
+            for b in ap_bssids:
+                for c in ap_bssids[b]:
+                    num_channels += 1
+
+            with Progress() as scanner:
+                scan_task = scanner.add_task(f"[cyan]Discovering hosts on {num_channels} channels...",
+                                             total=num_channels)
+
+                for bid in ap_bssids:
+                    hosts[bid] = []
+                    for channel in ap_bssids[bid]:
+                        unique_hosts = get_unique_hosts(interface=interface, bssid=bid, channel=channel, logger=logger)
+                        if unique_hosts:
+                            hosts[bid].append(unique_hosts)
+                        scanner.update(scan_task, advance=1)
         else:
             logger.error("Did not manage to capture BSSID(s) of AP")
 
         set_managed_mode = set_interface_mode(iface=interface, mode="Managed", logger=logger)
-        console.log(hosts)
         return hosts
     else:
         logger.error("Could not find Wi-Fi network")
@@ -134,18 +145,19 @@ def get_unique_hosts(interface: str, channel: int, bssid: str, logger) -> list:
     unique_hosts = OrderedDict()
 
     # Define a packet handler function to extract MAC addresses
-    def packet_handler(pkt):
+    def packet_handler(pkt: Packet):
         # Extract the source and destination MAC addresses from the packet
-        src_mac = pkt.addr2
-        dst_mac = pkt.addr1
+        if pkt.haslayer(Dot11):
+            src_mac = pkt[Dot11].addr2
+            dst_mac = pkt[Dot11].addr1
 
-        # Check if the source or destination MAC address matches the BSSID
-        if src_mac == bssid or dst_mac == bssid:
-            # Add the MAC address to the dictionary if it hasn't been seen before
-            if src_mac not in unique_hosts:
-                unique_hosts[src_mac] = True
-            if dst_mac not in unique_hosts:
-                unique_hosts[dst_mac] = True
+            # Check if the source or destination MAC address matches the BSSID
+            if src_mac == bssid or dst_mac == bssid:
+                # Add the MAC address to the dictionary if it hasn't been seen before
+                if src_mac not in unique_hosts:
+                    unique_hosts[src_mac] = True
+                if dst_mac not in unique_hosts:
+                    unique_hosts[dst_mac] = True
 
     logger.info(f"Discovering hosts on channel {channel}")
     # Sniff Wi-Fi packets for 10 seconds on the current channel
@@ -177,29 +189,31 @@ def discover_bssids_for_ssid(interface: str, ssid: str, logger) -> dict:
                         bssid_dict[bssid].append(chnl)
                         logger.info(f"Found BSSID: {bssid} on channel {chnl}")
 
-    # Loop through every Wi-Fi channel in both the 2.4GHz and 5GHz bands
-    logger.info("Searching on 2.4GHz bands...")
-    for channel in range(1, 14):
-        logger.info(f"Searching on channel {channel}...")
-        # Set the Wi-Fi interface to the current channel
-        os.system(f"iwconfig {interface} channel {channel}")
-        # Sniff Wi-Fi packets for 2 seconds on the current channel
-        sniff(prn=lambda pkt: packet_handler(pkt=pkt, chnl=channel), iface=interface, timeout=2)
+    with Progress() as scanner:
+        # Loop through every Wi-Fi channel in both the 2.4GHz and 5GHz bands
+        scan_24 = scanner.add_task("[cyan]Scanning 2.4 GHz bands...", total=13)
+        scan_5 = scanner.add_task("[cyan]Scanning 5 GHz bands...", total=130)
+        for channel in range(1, 14):
+            scanner.update(scan_24, advance=1, description=f"[cyan]Scanning channel {channel} on 2.4 GHz bands...")
+            # Set the Wi-Fi interface to the current channel
+            os.system(f"iwconfig {interface} channel {channel}")
+            # Sniff Wi-Fi packets for 2 seconds on the current channel
+            sniff(prn=lambda pkt: packet_handler(pkt=pkt, chnl=channel), iface=interface, timeout=2)
 
-    logger.info("Searching on 5GHz bands...")
-    channel = 36
-    while 36 <= channel <= 165:
-        previous_dict = bssid_dict.copy()
-        logger.info(f"Searching on channel {channel}...")
-        # Set the Wi-Fi interface to the current channel
-        os.system(f"iwconfig {interface} channel {channel}")
-        # Sniff Wi-Fi packets for 2 seconds on the current channel
-        sniff(prn=lambda pkt: packet_handler(pkt=pkt, chnl=channel), iface=interface, timeout=2)
+        channel = 36
+        while 36 <= channel <= 165:
+            previous_dict = bssid_dict.copy()
+            # Set the Wi-Fi interface to the current channel
+            os.system(f"iwconfig {interface} channel {channel}")
+            # Sniff Wi-Fi packets for 2 seconds on the current channel
+            sniff(prn=lambda pkt: packet_handler(pkt=pkt, chnl=channel), iface=interface, timeout=2)
 
-        if bssid_dict != previous_dict:
-            channel += 1
-        else:
-            channel += 4
+            if bssid_dict != previous_dict:
+                channel += 1
+                scanner.update(scan_5, advance=1, description=f"[cyan]Scanning channel {channel} on 5 GHz bands...")
+            else:
+                channel += 4
+                scanner.update(scan_5, advance=4, description=f"[cyan]Scanning channel {channel} on 5 GHz bands...")
 
     # Return the list of discovered BSSIDs
     return bssid_dict

@@ -13,11 +13,33 @@ Dashboard {
     text-style: bold;
 }
 
-Button {
-    width: 100%;
-}
-
 Switch {
     height: auto;
     width: auto;
+}
+
+Scanning {
+    layout: horizontal;
+}
+
+Button {
+    width: 100%;
+    margin: 1;
+
+}
+
+#left_pane {
+    padding: 3;
+    width: 30;
+    height: 100%;
+    color: #ffeee9;
+    background: #360b0d;
+}
+
+#right_pane {
+    padding: 2;
+}
+
+.section {
+    text-style: bold;
 }

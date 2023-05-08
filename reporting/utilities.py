@@ -41,11 +41,21 @@ def create_scan_file():
     return data, path
 
 
+def create_report_file(filename: str) -> str:
+    reports_directory = os.path.join(os.getcwd(), 'reports')
+    path = os.path.join(reports_directory, filename)
+
+    with open(path, "w", encoding="utf-8") as file:
+        json.dump({}, file, ensure_ascii=False, indent=4)
+
+    return path
+
+
 def create_scan_file_path():
     # Create path and name for JSON file
     scans_dir = os.path.join(os.getcwd(), 'scans')
     os.makedirs(scans_dir, exist_ok=True)
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    timestamp = datetime.datetime.strftime("%Y%m%d-%H%M%S")
     filename = f"scan_{timestamp}.json"
     path = os.path.join(scans_dir, filename)
     return path

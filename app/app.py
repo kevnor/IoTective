@@ -13,7 +13,5 @@ class IoTective(App):
     def on_mount(self) -> None:
         self.push_screen(Dashboard())
 
-
-if __name__ == "__main__":
-    app = IoTective()
-    app.run()
+    def on_scanning_submit_configuration(self, event: Scanning.SubmitConfiguration):
+        self.exit(event.configuration)
