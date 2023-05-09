@@ -6,7 +6,7 @@ from typing import List, Any
 from reporting.console import print_arp_scan_hosts
 
 
-def scan_ip_range(target: str, console: Any, logger: Any) -> List[Host]:
+def scan_ip_range(target: str, console: Any, logger: Any) -> List[dict]:
     """Perform a scan on the specified IP range.
 
     Args:
@@ -35,10 +35,10 @@ def scan_ip_range(target: str, console: Any, logger: Any) -> List[Host]:
                         console=console,
                         logger=logger
                     )
-                analysed_hosts.append(analysed_host)
+                analysed_hosts.append(analysed_host.as_dict())
             except Exception as e:
                 logger.error(f"Port scan for host {host.ip} failed: {str(e)}")
-                analysed_hosts.append(host)
+                analysed_hosts.append(host.as_dict())
     else:
         console.info("Could not find any hosts using ARP scan")
     return analysed_hosts

@@ -12,7 +12,6 @@ from datetime import datetime
 
 
 async def main(config: dict):
-
     logger = MyLogger(__name__)
     console = Console()
     now = datetime.now()
@@ -20,31 +19,30 @@ async def main(config: dict):
     report = {
         "file_name": now.strftime("report_%Y-%m-%d_%H-%M-%S.json"),
         "start_time": str(now),
-        "end_time": str,
+        "end_time": "",
         "config": config,
-        "network_scan": list,
-        "hue_bridge": dict[str, any],
-        "sniffing": dict[str, any]
+        "network_scan": [],
+        "hue_bridge": {},
+        "sniffing": {}
     }
 
     logger.info("Starting IoTective scanner...")
-    if config != {} and config["ip_address"] != "":
-        ip_range = f"{config['ip_address']}/{subnet_to_cidr(config['netmask'])}"
-
-        # Phase 2: Scanning
-        if config["network_scanning"]:
+    # Phase 2: Scanning
+    if config["network_scanning"]:
+        if config != {} and config["ip_address"] != "":
             # nmap scanning
+            ip_range = f"{config['ip_address']}/{subnet_to_cidr(config['netmask'])}"
             report["network_scan"] = scan_ip_range(target=ip_range, logger=logger, console=console)
 
             # Identify Philips Hue bridges on the network
             report["hue_bridge"] = discover_philips_hue_bridge(logger=logger, console=console)
-    else:
-        logger.error("Failed to determine target IP range")
+        else:
+            logger.error("Failed to determine target IP range")
 
     # Phase 3: Sniffing
     report["sniffing"] = await sniffing(config=config, logger=logger, console=console)
     generate_report(report=report)
-
+    return
 
 
 if __name__ == "__main__":
@@ -55,6 +53,6 @@ if __name__ == "__main__":
 
         if configuration is not None:
             asyncio.run(main(config=configuration))
-        interface.run()
+            interface.run()
     except KeyboardInterrupt:
         raise SystemExit("\nCtrl+C pressed. Exiting.")

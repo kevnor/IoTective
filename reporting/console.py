@@ -222,7 +222,7 @@ def make_host_info(host: Host) -> Panel:
     return info_panel
 
 
-def make_port_info(ports: list[Port]) -> Panel:
+def make_port_info(ports: list[dict]) -> Panel:
     if ports is not None and len(ports) > 0:
         port_info = Table(padding=1, box=box.MINIMAL)
         port_info.add_column("Port", style="cyan")
@@ -233,14 +233,14 @@ def make_port_info(ports: list[Port]) -> Panel:
 
         for port in ports:
             cve_nr = 0
-            if port.cves is not None:
-                cve_nr = len(port.cves)
+            if port["cves"] is not None:
+                cve_nr = len(port["cves"])
 
             port_info.add_row(
-                port.port_id,
-                port.service_name,
-                port.product,
-                port.version,
+                port["port_id"],
+                port["service_name"],
+                port["product"],
+                port["version"],
                 str(cve_nr)
             )
     else:

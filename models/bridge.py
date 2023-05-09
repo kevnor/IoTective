@@ -36,6 +36,9 @@ class Bridge:
         # Print the table using Rich
         console.print(table)
 
+    def as_dict(self) -> dict:
+        return vars(self)
+
     def update_bridge(self, data):
         self.name = data.get("name")
         self.type = data.get("type")

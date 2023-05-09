@@ -22,6 +22,9 @@ class Port:
             + f"CPE : {self.cpe}\n"
         )
 
+    def as_dict(self) -> dict:
+        return vars(self)
+
     def add_cve(self, cve: str) -> None:
         if self.cves is None:
             self.cves = []

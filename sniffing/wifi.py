@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from scapy.layers.dot11 import Dot11, Dot11Elt, Dot11Beacon, Dot11ProbeResp
+from scapy.layers.dot11 import Dot11, Dot11Elt
 from scapy.all import *
 from scapy.packet import Packet
+from scapy.error import Scapy_Exception
 import os
-from collections import OrderedDict
 import subprocess
-import re
-from rich.progress import Progress, track
+from rich.progress import Progress
 
 
 async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
@@ -20,34 +19,84 @@ async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
         if not set_monitor_mode:
             return hosts
 
-        # Retrieve BSSIDs that use the ESSID of the AP
-        ap_bssids = discover_bssids_for_ssid(interface=interface, ssid=wifi_network['ESSID'], logger=logger)
-
-        # Get MAC addresses of hosts connected to each BSSID
-        if len(ap_bssids) > 0:
-            num_channels = 0
-            for b in ap_bssids:
-                for c in ap_bssids[b]:
-                    num_channels += 1
-
-            with Progress() as scanner:
-                scan_task = scanner.add_task(f"[cyan]Discovering hosts on {num_channels} channels...",
-                                             total=num_channels)
-
-                for bid in ap_bssids:
-                    hosts[bid] = []
-                    for channel in ap_bssids[bid]:
-                        unique_hosts = get_unique_hosts(interface=interface, bssid=bid, channel=channel, logger=logger)
-                        if unique_hosts:
-                            hosts[bid].append(unique_hosts)
-                        scanner.update(scan_task, advance=1)
+        bssids = discover_bssids_on_ssid(ssid=wifi_network['ESSID'], interface=interface, logger=logger)
+        if len(bssids) > 0:
+            hosts = discover_hosts_on_bssids(bssids=bssids, interface=interface, logger=logger)
         else:
-            logger.error("Did not manage to capture BSSID(s) of AP")
-
-        set_managed_mode = set_interface_mode(iface=interface, mode="Managed", logger=logger)
+            logger.warning(f"Did find any BSSID(s) of using '{wifi_network['ESSID']}' as SSID")
+        set_interface_mode(iface=interface, mode="Managed", logger=logger)
         return hosts
     else:
         logger.error("Could not find Wi-Fi network")
+
+
+def discover_hosts_on_bssids(bssids: Dict[str, List[str]], interface: str, logger) -> Dict[str, List[str]]:
+    channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # 2.4 GHz channels
+    channels += [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157,
+                 161, 165]  # 5 GHz channels
+
+    with Progress() as scanner:
+        scan_task = scanner.add_task(f"[cyan]Discovering hosts connected to identified BSSIDs...",
+                                     total=len(channels))
+        for channel in channels:
+            # Change the channel of the wireless interface
+            os.system(f"iwconfig {interface} channel {channel}")
+
+            # Define a packet handler function to extract MAC addresses
+            def packet_handler(pkt: Packet):
+                # Extract the source and destination MAC addresses from the packet
+                if pkt.haslayer(Dot11) and pkt.type == 2:
+                    # Extract the BSSID and source MAC address from the Data frame
+                    bssid = pkt[Dot11].addr3
+                    src_mac = pkt[Dot11].addr2
+                    dst_mac = pkt[Dot11].addr1
+
+                    if bssid in bssids:
+                        if src_mac == bssid and dst_mac not in bssids[bssid]:
+                            bssids[bssid].append(dst_mac)
+                        elif dst_mac == bssid and src_mac not in bssids[bssid]:
+                            bssids[bssid].append(src_mac)
+            scanner.update(scan_task, advance=1)
+
+            # Sniff Wi-Fi packets for 10 seconds on the current channel
+            try:
+                sniff(prn=packet_handler, iface=interface, timeout=10)
+            except Scapy_Exception as e:
+                logger.error(e)
+    return bssids
+
+
+def discover_bssids_on_ssid(ssid: str, interface: str, logger) -> Dict[str, List[str]]:
+    bssids = {}
+    channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # 2.4 GHz channels
+    channels += [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157,
+                 161, 165]  # 5 GHz channels
+
+    with Progress() as scanner:
+        scan_task = scanner.add_task(f"[cyan]Discovering BSSIDs using '{ssid}' as SSID...",
+                                     total=len(channels))
+        for channel in channels:
+            # Change the channel of the wireless interface
+            os.system(f"iwconfig {interface} channel {channel}")
+
+            # Define a packet handler function to extract MAC addresses
+            def packet_handler(pkt: Packet):
+                # Extract the source and destination MAC addresses from the packet
+                if pkt.haslayer(Dot11) and pkt.haslayer(Dot11Elt) and pkt.info.decode() == ssid:
+                    # Check if the packet is a Beacon frame or a Data frame
+                    if pkt.type == 0 and pkt.subtype == 8:
+                        # Extract the BSSID from the Beacon frame
+                        bssid = pkt[Dot11].addr3
+                        bssids.setdefault(bssid, [])
+
+            scanner.update(scan_task, advance=1)
+
+            # Sniff Wi-Fi packets for 4 seconds on the current channel
+            try:
+                sniff(prn=packet_handler, iface=interface, timeout=4)
+            except Scapy_Exception as e:
+                logger.error(e)
+        return bssids
 
 
 def set_interface_mode(iface: str, mode: str, logger) -> bool:
@@ -84,15 +133,6 @@ def set_interface_mode(iface: str, mode: str, logger) -> bool:
         return False
 
 
-def get_wireless_mode(interface: str):
-    output = subprocess.check_output(["iwconfig", interface])
-    match = re.search(r"Mode:(\w+)", output.decode())
-    if match:
-        return match.group(1)
-    else:
-        return None
-
-
 def get_connected_wifi_network(interface: str) -> dict:
     try:
         output = subprocess.check_output(['iwconfig', interface])
@@ -110,110 +150,3 @@ def get_connected_wifi_network(interface: str) -> dict:
     except subprocess.CalledProcessError:
         pass
     return {}
-
-
-def get_hosts_on_bssid(bssid: str, logger, interface: str) -> list[str]:
-    hosts = []
-
-    def packet_handler(pkt: Packet):
-        # Check if the packet contains a Wi-Fi layer
-        if pkt.haslayer(Dot11):
-            # Check if the packet is a data packet and contains the BSSID field
-            if pkt.type == 2 and pkt.addr3:
-                # Get the BSSID of the access point
-                bssid = pkt.addr3
-                # Get the source MAC address of the data packet
-                src = pkt.addr2
-                # Display the information
-                hosts.append(pkt.addr2)
-                print(f"Host {src} is connected to {bssid}")
-
-    sniff(
-        iface=interface,
-        prn=packet_handler,
-        lfilter=lambda pkt: pkt.haslayer(Dot11) and pkt.addr3 == bssid
-    )
-
-    return hosts
-
-
-def get_unique_hosts(interface: str, channel: int, bssid: str, logger) -> list:
-    # Change the channel of the wireless interface
-    os.system(f"iwconfig {interface} channel {channel}")
-
-    # Initialize a set to store the unique hosts
-    unique_hosts = OrderedDict()
-
-    # Define a packet handler function to extract MAC addresses
-    def packet_handler(pkt: Packet):
-        # Extract the source and destination MAC addresses from the packet
-        if pkt.haslayer(Dot11):
-            src_mac = pkt[Dot11].addr2
-            dst_mac = pkt[Dot11].addr1
-
-            # Check if the source or destination MAC address matches the BSSID
-            if src_mac == bssid or dst_mac == bssid:
-                # Add the MAC address to the dictionary if it hasn't been seen before
-                if src_mac not in unique_hosts:
-                    unique_hosts[src_mac] = True
-                if dst_mac not in unique_hosts:
-                    unique_hosts[dst_mac] = True
-
-    logger.info(f"Discovering hosts on channel {channel}")
-    # Sniff Wi-Fi packets for 10 seconds on the current channel
-    sniff(prn=packet_handler, iface=interface, timeout=10)
-
-    # Convert the set to a list and return it
-    return list(unique_hosts)
-
-
-def discover_bssids_for_ssid(interface: str, ssid: str, logger) -> dict:
-    # Initialize an empty dictionary to store the discovered BSSIDs and channels
-    bssid_dict = {}
-
-    # Function to process Wi-Fi packets and extract BSSIDs
-    def packet_handler(pkt, chnl: int):
-        if pkt.haslayer(Dot11Beacon) or pkt.haslayer(Dot11ProbeResp):
-            # Extract the SSID from the packet
-            ssid_from_packet = pkt[Dot11Elt].info.decode()
-            # Check if the SSID matches the one we're looking for
-            if ssid_from_packet == ssid:
-                # Extract the BSSID from the packet
-                bssid = pkt[Dot11].addr2
-                # Add the BSSID and channel to the dictionary
-                if bssid not in bssid_dict:
-                    bssid_dict[bssid] = [chnl]
-                    logger.info(f"Found BSSID: {bssid} on channel {chnl}")
-                else:
-                    if chnl not in bssid_dict[bssid]:
-                        bssid_dict[bssid].append(chnl)
-                        logger.info(f"Found BSSID: {bssid} on channel {chnl}")
-
-    with Progress() as scanner:
-        # Loop through every Wi-Fi channel in both the 2.4GHz and 5GHz bands
-        scan_24 = scanner.add_task("[cyan]Scanning 2.4 GHz bands...", total=13)
-        scan_5 = scanner.add_task("[cyan]Scanning 5 GHz bands...", total=130)
-        for channel in range(1, 14):
-            scanner.update(scan_24, advance=1, description=f"[cyan]Scanning channel {channel} on 2.4 GHz bands...")
-            # Set the Wi-Fi interface to the current channel
-            os.system(f"iwconfig {interface} channel {channel}")
-            # Sniff Wi-Fi packets for 2 seconds on the current channel
-            sniff(prn=lambda pkt: packet_handler(pkt=pkt, chnl=channel), iface=interface, timeout=2)
-
-        channel = 36
-        while 36 <= channel <= 165:
-            previous_dict = bssid_dict.copy()
-            # Set the Wi-Fi interface to the current channel
-            os.system(f"iwconfig {interface} channel {channel}")
-            # Sniff Wi-Fi packets for 2 seconds on the current channel
-            sniff(prn=lambda pkt: packet_handler(pkt=pkt, chnl=channel), iface=interface, timeout=2)
-
-            if bssid_dict != previous_dict:
-                channel += 1
-                scanner.update(scan_5, advance=1, description=f"[cyan]Scanning channel {channel} on 5 GHz bands...")
-            else:
-                channel += 4
-                scanner.update(scan_5, advance=4, description=f"[cyan]Scanning channel {channel} on 5 GHz bands...")
-
-    # Return the list of discovered BSSIDs
-    return bssid_dict

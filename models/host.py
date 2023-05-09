@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Dict
-from .port import Port
+from models.port import Port
 
 
 @dataclass()
@@ -11,7 +11,7 @@ class Host:
     os: str = "Unknown"
     os_accuracy: int = 0
     os_type: str = "Unknown"
-    ports: list = None
+    ports: list[dict] = None
 
     def __str__(self) -> str:
         return (
@@ -23,6 +23,9 @@ class Host:
                 + f" Type : {self.os_type}"
                 + "\n"
         )
+
+    def as_dict(self) -> dict:
+        return vars(self)
 
     def colored(self) -> str:
         return (
@@ -36,7 +39,7 @@ class Host:
     def add_port(self, port: Port) -> None:
         if self.ports is None:
             self.ports = []
-        self.ports.append(port)
+        self.ports.append(port.as_dict())
 
     def update_host(self, data: Dict[str, Any]) -> None:
         if self.vendor == "Unknown":
