@@ -22,8 +22,12 @@ async def main(config: dict):
         "end_time": "",
         "config": config,
         "network_scan": [],
-        "hue_bridge": {},
-        "sniffing": {}
+        "hue_bridge": [],
+        "sniffing": {
+            "wifi": {},
+            "bluetooth": {},
+            "zigbee": {}
+        }
     }
 
     logger.info("Starting IoTective scanner...")

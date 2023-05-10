@@ -26,6 +26,7 @@ async def scan_once(znp: ZNP, channels: t.Channels, duration_exp: int):
 
         while True:
             update = await updates.get()
+            print(update)
 
             if isinstance(update, c.ZDO.NwkDiscoveryCnf.Callback):
                 break

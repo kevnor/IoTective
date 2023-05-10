@@ -8,7 +8,7 @@ async def sniffing(config: Dict, logger, console) -> Dict[str, Any]:
     try:
         hosts = {
             "wifi": {},
-            "bluetooth": [],
+            "bluetooth": {},
             "zigbee": []
         }
         if config["wifi_sniffing"]:
@@ -16,7 +16,7 @@ async def sniffing(config: Dict, logger, console) -> Dict[str, Any]:
         if config["ble_scanning"]:
             hosts["bluetooth"] = await bluetooth_enumeration(logger=logger)
         if config["zigbee_sniffing"]:
-            hosts["zigbee"] = await discover_zigbee_routers(radio_path=config["zigbee_device_path"])
+            hosts["zigbee"] = await discover_zigbee_routers(radio_path=config["zigbee_device_path"], logger=logger)
 
         return hosts
     except Exception as e:

@@ -5,25 +5,23 @@ from rich.progress import Progress
 
 
 async def bluetooth_enumeration(logger) -> dict[str, dict]:
-    devices = await scan_devices(logger, timeout=1)
+    devices = await scan_devices(logger, timeout=10)
 
-    bluetooth_data = {}
+    if len(devices) > 0:
+        with Progress() as scanner:
+            scan_task = scanner.add_task(description="Fetching device services...", total=len(devices))
+            for address in devices:
+                try:
+                    devices[address]["services"] = await get_device_services(address=address, logger=logger)
+                    scanner.advance(scan_task, advance=1)
+                except:
+                    scanner.advance(scan_task, advance=1)
+                    continue
 
-    with Progress() as scanner:
-        scan_task = scanner.add_task(description="Fetching device services...", total=len(devices))
-
-        for address in devices:
-            try:
-                data = format_bluetooth_details(raw_details=devices[address], logger=logger)
-                data["services"] = await get_device_services(address=address, logger=logger)
-                bluetooth_data[address] = data
-                scanner.advance(scan_task, advance=1)
-            except:
-                scanner.advance(scan_task, advance=1)
-                continue
-
-    logger.info(f"Managed to gather information about {str(len(bluetooth_data))} ble devices.")
-    return bluetooth_data
+        logger.info(f"Gathered information about {str(len(devices))} ble devices.")
+        return devices
+    else:
+        return {}
 
 
 async def get_device_services(address: str, logger, timeout=20) -> list[dict]:
@@ -52,11 +50,21 @@ async def get_device_services(address: str, logger, timeout=20) -> list[dict]:
             return services
     except BleakError as e:
         logger.error(e)
+        return []
 
 
-async def scan_devices(logger, timeout=5) -> dict[str, tuple]:
+async def scan_devices(logger, timeout=5) -> dict[str, dict]:
     try:
         logger.info(f"Scanning for Bluetooth LE devices for {str(timeout)} seconds...")
-        return await BleakScanner.discover(timeout=timeout, return_adv=True)
+
+        devices = await BleakScanner.discover(timeout=timeout, return_adv=True)
+
+        formatted_devices = {}
+
+        for device in devices:
+            formatted_devices[device] = format_bluetooth_details(raw_details=devices[device], logger=logger)
+
+        return formatted_devices
     except BleakError as e:
         logger.error(e)
+        return {}

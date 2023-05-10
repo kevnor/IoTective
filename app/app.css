@@ -21,6 +21,9 @@ Switch {
 Scanning {
     layout: horizontal;
 }
+Reports {
+    layout: horizontal;
+}
 
 Button {
     width: 100%;

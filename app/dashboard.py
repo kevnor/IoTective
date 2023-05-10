@@ -11,5 +11,4 @@ class Dashboard(Screen):
         yield Button("View Reports", id="reports", variant="warning")
 
     def on_button_pressed(self, event: Button.Pressed):
-        if event.button.id == "scanning":
-            self.app.push_screen("scanning")
+        self.app.push_screen(event.button.id)

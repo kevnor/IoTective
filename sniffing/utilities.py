@@ -1,4 +1,4 @@
-def format_bluetooth_details(raw_details, logger):
+def format_bluetooth_details(raw_details, logger) -> dict[str, any]:
     # Format device details into string. Accommodate errors caused by lack of data.
     dict_ = {
         # Device data:
@@ -39,10 +39,10 @@ def format_bluetooth_details(raw_details, logger):
         dict_['local_name'] = advertisement_data.local_name
     except Exception:
         logger.error(f'Local name not found for device with the following data: {device_data.address}')
-    try:
-        dict_['manufacturer_data'] = advertisement_data.manufacturer_data
-    except Exception:
-        logger.error(f'Manufacturer data not found for device with the following data: {device_data.address}')
+    #try:
+    #    dict_['manufacturer_data'] = advertisement_data.manufacturer_data
+    #except Exception:
+    #    logger.error(f'Manufacturer data not found for device with the following data: {device_data.address}')
     try:
         dict_['platform_data'] = advertisement_data.platform_data
     except Exception:

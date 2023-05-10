@@ -52,6 +52,8 @@ def discover_hosts_on_bssids(bssids: Dict[str, List[str]], interface: str, logge
                     dst_mac = pkt[Dot11].addr1
 
                     if bssid in bssids:
+                        print(pkt)
+                        print(pkt[Dot11])
                         if src_mac == bssid and dst_mac not in bssids[bssid]:
                             bssids[bssid].append(dst_mac)
                         elif dst_mac == bssid and src_mac not in bssids[bssid]:
@@ -91,9 +93,9 @@ def discover_bssids_on_ssid(ssid: str, interface: str, logger) -> Dict[str, List
 
             scanner.update(scan_task, advance=1)
 
-            # Sniff Wi-Fi packets for 4 seconds on the current channel
+            # Sniff Wi-Fi packets for 2 seconds on the current channel
             try:
-                sniff(prn=packet_handler, iface=interface, timeout=4)
+                sniff(prn=packet_handler, iface=interface, timeout=2)
             except Scapy_Exception as e:
                 logger.error(e)
         return bssids
