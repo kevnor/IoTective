@@ -25,20 +25,22 @@ async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
         else:
             logger.warning(f"Did find any BSSID(s) of using '{wifi_network['ESSID']}' as SSID")
         set_interface_mode(iface=interface, mode="Managed", logger=logger)
-        return hosts
+
     else:
         logger.error("Could not find Wi-Fi network")
+    return hosts
 
 
 def discover_hosts_on_bssids(bssids: Dict[str, List[str]], interface: str, logger) -> Dict[str, List[str]]:
     channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # 2.4 GHz channels
-    channels += [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157,
-                 161, 165]  # 5 GHz channels
+    #channels += [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157,
+    #             161, 165]  # 5 GHz channels
 
     with Progress() as scanner:
-        scan_task = scanner.add_task(f"[cyan]Discovering hosts connected to identified BSSIDs...",
+        scan_task = scanner.add_task(f"[cyan]Host discovery on channel 1...",
                                      total=len(channels))
         for channel in channels:
+            scanner.update(scan_task, description=f"[cyan]Host discovery on channel {channel}...")
             # Change the channel of the wireless interface
             os.system(f"iwconfig {interface} channel {channel}")
 
@@ -50,21 +52,21 @@ def discover_hosts_on_bssids(bssids: Dict[str, List[str]], interface: str, logge
                     bssid = pkt[Dot11].addr3
                     src_mac = pkt[Dot11].addr2
                     dst_mac = pkt[Dot11].addr1
-
+                    print(pkt[Dot11].mysummary)
+                    print(pkt[Dot11].address_meaning)
                     if bssid in bssids:
-                        print(pkt)
-                        print(pkt[Dot11])
                         if src_mac == bssid and dst_mac not in bssids[bssid]:
                             bssids[bssid].append(dst_mac)
                         elif dst_mac == bssid and src_mac not in bssids[bssid]:
                             bssids[bssid].append(src_mac)
-            scanner.update(scan_task, advance=1)
 
             # Sniff Wi-Fi packets for 10 seconds on the current channel
             try:
                 sniff(prn=packet_handler, iface=interface, timeout=10)
+
             except Scapy_Exception as e:
                 logger.error(e)
+            scanner.update(scan_task, advance=1)
     return bssids
 
 
