@@ -7,7 +7,7 @@ python3-nmap
 pyyaml~=6.0
 bleak==0.20.2
 requests==2.30.0
-zeroconf==0.62.0
+zeroconf==0.58.2
 paramiko~=3.1.0
 networkx==3.1
 plotly==5.14.1

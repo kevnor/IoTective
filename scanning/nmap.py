@@ -57,7 +57,7 @@ def port_scan(target: str, logger) -> dict:
     try:
         logger.info(f"Scanning {target} for open ports, services, and known vulnerabilities ...")
         nmp = Nmap()
-        arguments = "--open -T4 -O --top-ports 100 --script vulners"
+        arguments = "--open -T4 -O --top-ports 10000 --script vulners"
         return nmp.nmap_version_detection(target=target, args=arguments)
     except NmapNotInstalledError as e:
         logger.error(f"Installation error in nmap command: {e}")

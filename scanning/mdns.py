@@ -1,7 +1,7 @@
 # Ref: https://github.com/expliot-framework/expliot/blob/master/expliot/core/protocols/internet/mdns/__init__.py
 import time
 import socket
-from zeroconf import Zeroconf, ServiceBrowser
+from zeroconf import Zeroconf, ServiceBrowser, NotRunningException
 
 from .service_types import MDNS_SERVICE_TYPES
 
@@ -19,9 +19,12 @@ class MdnsListener:
         pass
 
     def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-        info = zc.get_service_info(type_, name)
-        if info is not None:
-            self.data.append(info)
+        try:
+            info = zc.get_service_info(type_, name)
+            if info is not None:
+                self.data.append(info)
+        except NotRunningException:
+            return None
 
     def get_data(self) -> list:
         return self.data
@@ -41,7 +44,7 @@ class MdnsScan:
     def scan(self) -> None:
         zeroconf = Zeroconf()
         listener = MdnsListener()
-        ServiceBrowser(zeroconf, self._service_type, listener)
+        ServiceBrowser(zc=zeroconf, type_=self._service_type, listener=listener)
         time.sleep(self.timeout)
         for info in listener.get_data():
             data = {

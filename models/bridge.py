@@ -56,17 +56,22 @@ class Bridge:
 
     def get_config(self, logger):
         if self.ip:
-            res = requests.get(f"https://{self.ip}/api/0/config", verify=False)
-            if res.status_code == 200:
-                data = res.json()
-                logger.info("Successfully fetched bridge configuration.")
-                self.name = data.get("name")
-                self.datastore_version = data.get("datastoreversion")
-                self.software_version = data.get("swversion")
-                self.api_version = data.get("apiversion")
-                self.bridge_id = data.get("bridgeid")
-                self.mac = data.get("mac")
-                self.model_id = data.get("modelid")
+            try:
+                res = requests.get(f"https://{self.ip}/api/0/config", verify=False)
+                if res.status_code == 200:
+                    data = res.json()
+                    logger.info("Successfully fetched bridge configuration.")
+                    self.name = data.get("name")
+                    self.datastore_version = data.get("datastoreversion")
+                    self.software_version = data.get("swversion")
+                    self.api_version = data.get("apiversion")
+                    self.bridge_id = data.get("bridgeid")
+                    self.mac = data.get("mac")
+                    self.model_id = data.get("modelid")
+            except requests.exceptions.RequestsWarning as w:
+                logger.warning(w)
+            except requests.exceptions.RequestException as e:
+                logger.error(e)
         else:
             logger.error("Can't fetch bridge configuration: Missing IP address.")
 
@@ -74,8 +79,10 @@ class Bridge:
         self.internet = connected
 
     def check_for_vulnerabilities(self):
-        # Check if vulnerable to CVE-2020-6007 (Buffer Overflow)
-        self.cves = {"CVE-2020-6007": self.api_version and self.api_version <= "1.31.0"}
+        self.cves = {
+            # Check if vulnerable to CVE-2020-6007 (Buffer Overflow)
+            "CVE-2020-6007": {self.api_version and self.api_version <= "1.31.0"},
+            # Check if vulnerable to CVE-2017-14797 (Lack of Transport Encryption)
+            "CVE-2017-14797": {self.software_version and self.software_version < "1709131401"}
+        }
 
-        # Check if vulnerable to CVE-2017-14797 (Lack of Transport Encryption)
-        self.cves = {"CVE-2017-14797": self.software_version and self.software_version < "1709131401"}

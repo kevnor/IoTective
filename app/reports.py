@@ -23,7 +23,7 @@ class Reports(Screen):
             yield MarkdownViewer(markdown=self.markdown, show_table_of_contents=True)
 
     def on_mount(self) -> None:
-        self.query_one(MarkdownViewer).visible = False
+        self.query_one(MarkdownViewer).display = False
 
         table = self.query_one(DataTable)
         table.cursor_type = "row"
@@ -39,13 +39,13 @@ class Reports(Screen):
                 key=report["file_name"]
             )
 
-    def on_button_pressed(self, event: Button.Pressed):
+    def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "back":
-            if self.query_one(DataTable).visible:
+            if self.query_one(DataTable).display:
                 self.app.pop_screen()
             else:
-                self.query_one(MarkdownViewer).visible = False
-                self.query_one(DataTable).visible = True
+                self.query_one(MarkdownViewer).display = False
+                self.query_one(DataTable).display = True
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         file_name = str(event.row_key.value)
@@ -55,8 +55,8 @@ class Reports(Screen):
             data = json.load(report)
             self.markdown = create_report_information_markdown(data)
         self.query_one(Markdown).update(markdown=create_report_information_markdown(data=data))
-        self.query_one(DataTable).visible = False
-        self.query_one(MarkdownViewer).visible = True
+        self.query_one(DataTable).display = False
+        self.query_one(MarkdownViewer).display = True
 
 
 def get_reports_list() -> list[dict]:
@@ -104,6 +104,18 @@ def create_report_information_markdown(data: dict[str, any]) -> str:
 **Zigbee Sniffing:** {'Yes' if data['config']['zigbee_sniffing'] else 'No'}
 
 **Zigbee Device Path:** {data['config']['zigbee_device_path']}
+
+
+## Scan Summary
+
+Network devices: {len(data["network_scan"])}
+
+Wi-Fi devices: {len(data["sniffing"]["wifi"])}
+
+Bluetooth devices: {len(data["sniffing"]["bluetooth"])}
+
+ZigBee devices: {len(data["sniffing"]["zigbee"])}
+
 
 """
     if data['config']['zigbee_sniffing']:
@@ -169,11 +181,13 @@ def create_network_scanning_markdown(data: list) -> str:
         if device["ports"]:
             formatted_devices += f"""\
 
-**Ports:**
+#### Ports ####
 
             """
             for port in device["ports"]:
                 formatted_devices += f"""\
+
+##### Port {port["port_id"]} #####
 
 | Name              | Value  |
 | ----------------- | ------ |
@@ -182,8 +196,24 @@ def create_network_scanning_markdown(data: list) -> str:
 | `Service Name` | `{port["service_name"]}`  |
 | `Product` | `{port["product"]}` |
 | `Version`| `{port["version"]}`  |
-| `CPE`   | `{port["cpe"][0] if len(port["cpe"]) > 0 else "Could not identify"}` |
+| `CPE`   | `{port["cpe"][0] if len(port["cpe"]) > 0 else "Unknown"}` |
 
+"""
+                if port["cves"] is not None:
+                    formatted_devices += f"""\
+
+** Potential Vulnerabilities **
+
+"""
+                    for cve in port["cves"]:
+                        formatted_devices += f"""\
+
+| Name              | Value  |
+| ----------------- | ------ |
+| `ID`          | `{cve["id"]}` |
+| `Is exploit?`  | `{'Yes' if cve["is_exploit"] else 'No'}`  |
+| `CVSS` | `{cve["cvss"]}`  |
+| `Type` | `{cve["type"]}` |
 
 """
 

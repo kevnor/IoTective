@@ -33,8 +33,8 @@ async def wifi_sniffing(interface: str, logger, console) -> Dict[str, List]:
 
 def discover_hosts_on_bssids(bssids: Dict[str, List[str]], interface: str, logger) -> Dict[str, List[str]]:
     channels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # 2.4 GHz channels
-    #channels += [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157,
-    #             161, 165]  # 5 GHz channels
+    channels += [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157,
+                 161, 165]  # 5 GHz channels
 
     with Progress() as scanner:
         scan_task = scanner.add_task(f"[cyan]Host discovery on channel 1...",
@@ -52,8 +52,6 @@ def discover_hosts_on_bssids(bssids: Dict[str, List[str]], interface: str, logge
                     bssid = pkt[Dot11].addr3
                     src_mac = pkt[Dot11].addr2
                     dst_mac = pkt[Dot11].addr1
-                    print(pkt[Dot11].mysummary)
-                    print(pkt[Dot11].address_meaning)
                     if bssid in bssids:
                         if src_mac == bssid and dst_mac not in bssids[bssid]:
                             bssids[bssid].append(dst_mac)
