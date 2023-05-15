@@ -9,7 +9,7 @@ from textual.widgets import DataTable, Button
 from textual.containers import Vertical
 from textual.widgets import MarkdownViewer, Markdown
 
-COLUMNS = ("Time", "Nmap Scanning", "Bluetooth", "Wi-Fi", "ZigBee")
+COLUMNS = ("Nmap Scanning", "Bluetooth", "Wi-Fi", "ZigBee")
 
 
 class Reports(Screen):
@@ -28,16 +28,19 @@ class Reports(Screen):
         table = self.query_one(DataTable)
         table.cursor_type = "row"
         table.zebra_stripes = True
+        table.add_column(label="Time", key="Time")
         table.add_columns(*COLUMNS)
         for report in get_reports_list():
-            table.add_row(
-                datetime.strptime(report["end_time"], '%Y-%m-%d %H:%M:%S.%f').strftime('%A, %B %d, %Y %I:%M:%S %p'),
-                "✅" if report["config"]["network_scanning"] else "❌",
-                "✅" if report["config"]["ble_scanning"] else "❌",
-                "✅" if report["config"]["wifi_sniffing"] else "❌",
-                "✅" if report["config"]["zigbee_sniffing"] else "❌",
-                key=report["file_name"]
-            )
+            if "file_name" in report:
+                table.add_row(
+                    datetime.strptime(report["end_time"], '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%d %H:%M:%S'),
+                    "✅" if report["config"]["network_scanning"] else "❌",
+                    "✅" if report["config"]["ble_scanning"] else "❌",
+                    "✅" if report["config"]["wifi_sniffing"] else "❌",
+                    "✅" if report["config"]["zigbee_sniffing"] else "❌",
+                    key=report["file_name"]
+                )
+        table.sort("Time", reverse=True)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "back":
@@ -117,6 +120,7 @@ Bluetooth devices: {len(data["sniffing"]["bluetooth"])}
 ZigBee devices: {len(data["sniffing"]["zigbee"])}
 
 
+# Devices #
 """
     if data['config']['zigbee_sniffing']:
         markdown += create_zigbee_markdown(data=data["sniffing"]["zigbee"])
@@ -124,6 +128,8 @@ ZigBee devices: {len(data["sniffing"]["zigbee"])}
         markdown += create_network_scanning_markdown(data=data["network_scan"])
         if len(data["hue_bridge"]) > 0:
             markdown += create_hue_bridge_markdown(data=data["hue_bridge"])
+    if data["config"]["ble_scanning"]:
+        markdown += create_bluetooth_markdown(data=data["sniffing"]["bluetooth"])
 
     return markdown
 
@@ -228,7 +234,7 @@ def create_zigbee_markdown(data: list) -> str:
 
     for channel in data:
         channel_markdown = f"""\
-### Channel {channel}
+### Channel {channel} ###
 
 """
 
@@ -250,4 +256,44 @@ def create_zigbee_markdown(data: list) -> str:
 """
         formatted_devices += channel_markdown
 
+    return formatted_devices
+
+
+def create_bluetooth_markdown(data: dict) -> str:
+    formatted_devices = f"""
+## Bluetooth Devices ##
+
+"""
+    for device in data:
+        formatted_devices += f"""\
+        
+### {data[device]["name"]} ###
+
+| Name              | Value  |
+| ----------------- | ------ |
+| `Address`         | `{data[device]["address"]}` |
+| `Local Name`      | `{data[device]["address"] if data[device]["address"] else "Unknown"}`  |
+| `Name`            | `{data[device]["name"] if data[device]["name"] else "Unknown"}`  |
+| `Company Name`    | `{data[device]["company_name"][0] if len(data[device]["company_name"]) > 0 else "Unknown"}` |
+| `RSSI`            | `{data[device]["rssi"]}`  |
+| `Service UUID`    | `{data[device]["service_uuids"][0] if len(data[device]["service_uuids"]) > 0 else "Unknown"}` |
+| `Transmit Power`  | `{data[device]["tx_power"]}` |   
+
+"""
+        for service in data[device]["services"]:
+            formatted_devices += f"""\
+
+- **{service["description"]}**
+  - Name: `{service["name"]}`
+  - Characteristics:
+"""
+            for characteristic in service["characteristics"]:
+                formatted_devices += f"""\
+    - {service["characteristics"][characteristic]["description"]}
+      - UUID: `{service["characteristics"][characteristic]["uuid"]}`
+      - Handle: `{service["characteristics"][characteristic]["handle"]}`
+      - Properties: `{service["characteristics"][characteristic]["properties"]}`
+      - Descriptors: `{service["characteristics"][characteristic]["descriptors"]}`
+
+"""
     return formatted_devices
