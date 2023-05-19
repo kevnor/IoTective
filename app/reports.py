@@ -137,7 +137,7 @@ ZigBee devices: {len(data["sniffing"]["zigbee"])}
 def create_hue_bridge_markdown(data: list[dict]) -> str:
     markdown = f"""
     
-### Philips Hue Bridge
+### Philips Hue Bridge ###
 
 """
     for bridge in data:
@@ -250,8 +250,7 @@ def create_zigbee_markdown(data: list) -> str:
 | `Stack Profile`   | `{device["StackProfile"]}` |
 | `LQI`             | `{device["LQI"]}` |   
 | `Depth`   | `{device["Depth"]}` |   
-| `Update ID`   | `{device["UpdateId"]}` |   
-
+| `Update ID`   | `{device["UpdateId"]}` |
 
 """
         formatted_devices += channel_markdown
@@ -283,7 +282,7 @@ def create_bluetooth_markdown(data: dict) -> str:
         for service in data[device]["services"]:
             formatted_devices += f"""\
 
-- **{service["description"]}**
+- ** {service["description"]} **
   - Name: `{service["name"]}`
   - Characteristics:
 """

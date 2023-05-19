@@ -81,8 +81,8 @@ class Bridge:
     def check_for_vulnerabilities(self):
         self.cves = {
             # Check if vulnerable to CVE-2020-6007 (Buffer Overflow)
-            "CVE-2020-6007": {self.api_version and self.api_version <= "1.31.0"},
+            "CVE-2020-6007": self.api_version and self.api_version <= "1.31.0",
             # Check if vulnerable to CVE-2017-14797 (Lack of Transport Encryption)
-            "CVE-2017-14797": {self.software_version and self.software_version < "1709131401"}
+            "CVE-2017-14797": self.software_version and self.software_version < "1709131401"
         }
 

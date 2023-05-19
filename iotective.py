@@ -36,13 +36,12 @@ async def main(config: dict):
         if config != {} and config["ip_address"] != "":
             # nmap scanning
             ip_range = f"{config['ip_address']}/{subnet_to_cidr(config['netmask'])}"
-            report["network_scan"] = scan_ip_range(target=ip_range, logger=logger, console=console)
+            report["network_scan"] = scan_ip_range(target=ip_range, logger=logger, console=console, config=report["config"])
 
             # Identify Philips Hue bridges on the network
             report["hue_bridge"] = discover_philips_hue_bridge(logger=logger, console=console)
         else:
             logger.error("Failed to determine target IP range")
-
     # Phase 3: Sniffing
     report["sniffing"] = await sniffing(config=config, logger=logger, console=console)
     generate_report(report=report)
@@ -54,6 +53,7 @@ if __name__ == "__main__":
         # Phase 1: Initialization
         interface = IoTective()
         configuration = interface.run()
+        interface.exit()
 
         if configuration is not None:
             asyncio.run(main(config=configuration))

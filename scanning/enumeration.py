@@ -6,7 +6,7 @@ from typing import List, Any
 from reporting.console import print_arp_scan_hosts
 
 
-def scan_ip_range(target: str, console: Any, logger: Any) -> List[dict]:
+def scan_ip_range(target: str, console: Any, logger: Any, config: dict) -> List[dict]:
     """Perform a scan on the specified IP range.
 
     Args:

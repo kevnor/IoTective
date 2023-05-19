@@ -20,5 +20,4 @@ async def sniffing(config: Dict, logger, console) -> Dict[str, Any]:
             hosts["zigbee"] = await discover_zigbee_routers(radio_path=config["zigbee_device_path"], logger=logger)
     except Exception as e:
         logger.error(e)
-    print(hosts)
     return hosts
