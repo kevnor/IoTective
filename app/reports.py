@@ -138,11 +138,9 @@ def create_hue_bridge_markdown(data: list[dict]) -> str:
     markdown = f"""
     
 ### Philips Hue Bridge ###
-
 """
     for bridge in data:
         markdown += f"""\
-    
 | Name              | Value  |
 | ----------------- | ------ |
 | `IP Address`          | `{bridge["ip"]}` |
@@ -153,10 +151,12 @@ def create_hue_bridge_markdown(data: list[dict]) -> str:
 | `API Version`   | `{bridge["api_version"]}` |
 | `Software Version`   | `{bridge["software_version"]}` |
 | `Port`   | `{bridge["port"]}` |
-| `Server`   | `{bridge["server"]}` |
-| `Type`   | `{bridge["type"]}` |
-| `Weight`   | `{bridge["weight"]}` |
+| `Server`   | `{bridge["server"] if bridge["server"] else "Unknown"}` |
+| `Type`   | `{bridge["type"] if bridge["type"] else "Unknown"} ` |
+| `Weight`   | `{bridge["weight"] if bridge["weight"] else "Unknown"}` |
 | `Cloud Connected`   | `{'Yes' if bridge["internet"] else 'No'}` |
+| `CVE-2020-6007` | `{"Vulnerable" if bridge["cves"]["CVE-2020-6007"] else "Not Vulnerable"}`|
+| `CVE-2017-14797` | `{"Vulnerable" if bridge["cves"]["CVE-2017-14797"] else "Not Vulnerable"}`|
 
 """
     return markdown
@@ -164,7 +164,7 @@ def create_hue_bridge_markdown(data: list[dict]) -> str:
 
 def create_network_scanning_markdown(data: list) -> str:
     formatted_devices = f"""
-## Network Devices
+## Network Devices ##
 
 """
 
