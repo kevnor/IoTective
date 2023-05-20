@@ -1,18 +1,9 @@
 from textual.screen import Screen
-from textual.widget import Widget
-from textual.widgets import OptionList, Label, RadioSet, RadioButton, Static, Header, Input, Switch, Button, TextLog
-from initialization.utilities import get_ip_ranges, subnet_to_cidr, is_wireless_interface
-from textual.app import ComposeResult, RenderResult
-from textual.widgets.option_list import Option, Separator
-from textual.containers import Vertical, Horizontal
-from textual.reactive import reactive
+from initialization.utilities import get_ip_ranges, subnet_to_cidr
 from textual.messages import Message
 from typing import Dict, List, Any
 
-from textual import events
-from textual.app import App
-from textual.widgets import RadioSet, Label
-from textual.app import App, ComposeResult
+from textual.app import ComposeResult
 from textual.widgets import Label, RadioSet, RadioButton, Button, Switch
 from textual.widget import Widget
 from textual.reactive import reactive

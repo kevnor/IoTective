@@ -16,7 +16,6 @@ from rich.panel import Panel
 from datetime import datetime
 from rich import box
 from models.host import Host
-from models.port import Port
 
 
 def display_bluetooth_devices():
