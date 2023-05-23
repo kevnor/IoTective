@@ -3,7 +3,7 @@ prettytable==3.7.0
 python3-nmap
 pyyaml~=6.0
 bleak==0.20.2
-requests==2.30.0
+requests==2.31.0
 zeroconf==0.58.2
 scapy~=2.5.0
 rich~=13.3.4
