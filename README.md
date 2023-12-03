@@ -6,27 +6,27 @@ This script is to be used for security scanning of home environments that has co
 
 1. Clone this repository:
 
-```bash
+```powershell
 git clone https://github.com/kevnor/IoTective.git
 ```
 
 2. (Optional) Use a virtual environment:
 
-```bash
+```powershell
 python -m venv .venv
-.venv/Scripts/Activate # Windows
+.\.venv\Scripts\Activate.ps1 # Windows
 ```
 
 2. Download dependencies:
 
-```bash
+```powershell
 cd iotective
 python -m pip install -r requirements.txt
 ```
 
 3. Start IoTective:
 
-```bash
+```powershell
 python iotective.py
 ```
 
