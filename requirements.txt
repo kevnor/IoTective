@@ -4,7 +4,7 @@ python3-nmap
 pyyaml~=6.0
 bleak==0.20.2
 requests==2.32.2
-zeroconf==0.149.7
+zeroconf==0.149.12
 scapy~=2.5.0
 rich~=13.3.4
 pyroute2==0.7.8
